@@ -3,249 +3,183 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Do conspiracy scales all measure the same thing? · Steven M. Smallpage</title>
-<meta name="description" content="Interactive figure from Smallpage, Jensen & Askew (2026), Frontiers in Psychology: how much of each item in four short conspiracy-mentality scales reflects the common factor, and how much is scale-specific.">
+<title>Are conspiracy scales interchangeable? · Steven M. Smallpage</title>
+<meta name="description" content="Interactive summary of Smallpage, Jensen & Askew (2026), Frontiers in Psychology: four short conspiracy-mentality scales share one common factor, but two carry extra content.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --surface:#FBF8F2; --card:#FFFFFF; --ink:#1F2421; --ink2:#4A524C; --muted:#7A817B;
-    --rule:#E3DDD0; --track:#ECE6DA; --hedge:#2F4A33;
-    --gen:#1B6E3F; --spec:#C07E0E;
-  }
+  :root{--surface:#FBF8F2;--card:#FFFFFF;--ink:#1F2421;--ink2:#4A524C;--muted:#7A817B;--rule:#E3DDD0;--track:#ECE6DA;--hedge:#2F4A33;--gen:#1B6E3F;--spec:#C07E0E;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--surface);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.5}
   .wrap{max-width:860px;margin:0 auto;padding:40px 22px 60px}
+  .back{font-size:13px;margin-bottom:22px}
+  a{color:var(--hedge)}
   .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--hedge);font-weight:600}
   h1{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:clamp(28px,4.6vw,40px);line-height:1.15;margin:8px 0 14px}
-  .lede{font-family:"Source Serif 4",Georgia,serif;font-size:18px;color:var(--ink2);max-width:680px;margin:0 0 26px}
-  .controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;margin:0 0 14px}
-  .seg{display:inline-flex;border:1px solid var(--rule);border-radius:999px;background:var(--card);padding:3px}
-  .seg button{border:0;background:transparent;font:inherit;font-size:13px;color:var(--ink2);padding:6px 13px;border-radius:999px;cursor:pointer}
-  .seg button[aria-pressed="true"]{background:var(--hedge);color:#fff}
-  .ctl-label{font-size:12px;color:var(--muted);margin-right:6px}
-  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:4px 0 18px}
-  .legend span{display:inline-flex;align-items:center;gap:7px}
-  .sw{width:14px;height:10px;border-radius:3px;display:inline-block}
-  .chart{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:8px 20px 18px}
-  .group{padding-top:14px}
-  .ghead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1px solid var(--rule);padding-bottom:6px;margin-bottom:6px}
-  .gname{font-weight:600;font-size:14px}
-  .gname small{font-weight:400;color:var(--muted);margin-left:6px}
-  .gstat{font-size:12px;color:var(--muted);white-space:nowrap}
-  .row{display:grid;grid-template-columns:74px 1fr 92px;align-items:center;gap:12px;padding:5px 0;border-radius:6px;cursor:default}
-  .row:hover,.row:focus{background:#F6F2EA;outline:none}
-  .iid{font-size:13px;color:var(--ink2);font-variant-numeric:tabular-nums}
-  .track{position:relative;height:16px;background:var(--track);border-radius:4px;overflow:hidden}
-  .seg-g,.seg-s{position:absolute;top:0;bottom:0}
-  .seg-g{left:0;background:var(--gen);border-radius:4px 0 0 4px}
-  .seg-s{background:var(--spec);border-left:2px solid var(--card)}
-  .val{font-size:12px;color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums}
-  /* loadings view */
-  .lrow{display:grid;grid-template-columns:74px 1fr 92px;align-items:center;gap:12px;padding:4px 0;border-radius:6px}
-  .lrow:hover,.lrow:focus{background:#F6F2EA;outline:none}
-  .lplot{position:relative;height:22px}
-  .zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:#B9B2A4}
-  .lb{position:absolute;height:8px;border-radius:2px}
-  .lb.g{top:2px;background:var(--gen)}
-  .lb.s{top:12px;background:var(--spec)}
-  .axis{display:grid;grid-template-columns:74px 1fr 92px;gap:12px;margin-top:6px}
-  .ticks{position:relative;height:16px;font-size:11px;color:var(--muted)}
+  .lede{font-family:"Source Serif 4",Georgia,serif;font-size:18px;color:var(--ink2);max-width:690px;margin:0 0 28px}
+  h2{font-family:"Source Serif 4",Georgia,serif;font-size:22px;line-height:1.25;margin:40px 0 6px}
+  .sub{font-size:14px;color:var(--ink2);max-width:690px;margin:0 0 14px}
+  .panel{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:18px 20px}
+  /* scorecard */
+  table.sc{border-collapse:collapse;width:100%;font-size:14px}
+  table.sc th,table.sc td{padding:10px 8px;border-bottom:1px solid var(--rule);text-align:center;vertical-align:middle}
+  table.sc th{font-weight:600;font-size:12.5px;color:var(--ink2)}
+  table.sc th.cond{text-align:left;width:46%}
+  table.sc td.cond{text-align:left;color:var(--ink2);font-size:13.5px}
+  table.sc tr:last-child td{border-bottom:0}
+  .mark{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;cursor:default}
+  .ok{background:#E6F0E9;color:#164F2E}
+  .no{background:#F7ECD8;color:#7A4F07}
+  .scale-h{display:block;font-size:14px;color:var(--ink);white-space:nowrap}
+  .scale-h small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+  /* bars */
+  .brow{display:grid;grid-template-columns:150px 1fr 56px;gap:12px;align-items:center;padding:6px 0;border-radius:6px}
+  .brow:hover,.brow:focus{background:#F6F2EA;outline:none}
+  .blab{font-size:13.5px;color:var(--ink2)}
+  .btrack{position:relative;height:16px}
+  .bar{position:absolute;top:0;bottom:0;border-radius:4px}
+  .bval{font-size:12.5px;color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums}
+  .zero{position:absolute;top:-4px;bottom:-4px;width:1px;background:#B9B2A4}
+  .ticks{position:relative;height:16px;font-size:11px;color:var(--muted);margin-left:162px;margin-right:68px}
   .ticks span{position:absolute;transform:translateX(-50%)}
-  .tip{position:fixed;pointer-events:none;z-index:10;max-width:320px;background:#1F2421;color:#F4F1EA;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.45;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:opacity .08s}
+  .callouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
+  .callout{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--spec);border-radius:10px;padding:14px 16px}
+  .callout h3{margin:0 0 4px;font-size:14px}
+  .callout p{margin:0;font-size:13.5px;color:var(--ink2)}
+  .callout .big{font-family:"Source Serif 4",Georgia,serif;font-size:24px;font-weight:600;color:var(--ink)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:0 0 10px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:14px;height:10px;border-radius:3px;display:inline-block}
+  .tip{position:fixed;pointer-events:none;z-index:10;max-width:300px;background:#1F2421;color:#F4F1EA;border-radius:8px;padding:9px 11px;font-size:12.5px;line-height:1.45;box-shadow:0 6px 24px rgba(0,0,0,.18);opacity:0;transition:opacity .08s}
   .tip b{color:#fff}
-  .tip .w{font-family:"Source Serif 4",Georgia,serif;font-size:14px;margin:4px 0 8px;color:#fff}
-  .tip table{border-collapse:collapse;width:100%}
-  .tip td{padding:1px 0}
-  .tip td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:26px 0 0}
-  .card{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:14px 16px}
-  .card h3{margin:0 0 2px;font-size:14px}
-  .card .full{font-size:12px;color:var(--muted);margin-bottom:8px}
-  .card .num{font-family:"Source Serif 4",Georgia,serif;font-size:26px;font-weight:600}
-  .card .numlab{font-size:11.5px;color:var(--muted);margin-bottom:8px}
-  .card p{margin:0;font-size:13px;color:var(--ink2)}
-  h2{font-family:"Source Serif 4",Georgia,serif;font-size:22px;margin:36px 0 8px}
-  .note{font-size:13.5px;color:var(--ink2);max-width:700px}
-  details{margin-top:18px}
+  details{margin-top:28px}
   summary{cursor:pointer;font-size:13.5px;color:var(--hedge);font-weight:500}
-  table.data{border-collapse:collapse;width:100%;font-size:12.5px;margin-top:10px;background:var(--card)}
+  .dnote{font-size:13px;color:var(--ink2);max-width:690px;margin:10px 0}
+  table.data{border-collapse:collapse;width:100%;font-size:12.5px;background:var(--card)}
   table.data th,table.data td{border-bottom:1px solid var(--rule);padding:6px 8px;text-align:left;vertical-align:top}
-  table.data td.n,table.data th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.data .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   .cite{margin-top:36px;padding-top:16px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--muted)}
-  .cite a,.back a{color:var(--hedge)}
-  .back{font-size:13px;margin-bottom:22px}
-  @media (max-width:560px){
-    .row,.lrow,.axis{grid-template-columns:58px 1fr 70px;gap:8px}
-    .gstat{display:none}
+  @media (max-width:600px){
+    table.sc th.cond{width:auto}
+    .panel{padding:14px 12px}
+    table.sc th,table.sc td{padding:8px 4px}
+    .scale-h small{display:none}
+    table.sc{font-size:13px}
+    table.sc td.cond{font-size:12.5px}
+    .mark{padding:3px 6px}
+    .mark .t{display:none}
+    .brow{grid-template-columns:96px 1fr 48px;gap:8px}
+    .ticks{margin-left:104px;margin-right:56px}
   }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="back"><a href="https://www.stevensmallpage.com/research">← stevensmallpage.com</a></div>
-  <div class="eyebrow">Interactive figure · Smallpage, Jensen &amp; Askew (2026)</div>
-  <h1>Do conspiracy scales all measure the same thing?</h1>
-  <p class="lede">Four short scales of “conspiracy mentality” are often treated as interchangeable. A bifactor model separates what each item shares with all four from what is particular to its own scale. Hover over or tap an item to read it.</p>
+  <div class="eyebrow">Interactive summary · Smallpage, Jensen &amp; Askew (2026)</div>
+  <h1>Are the short conspiracy scales interchangeable?</h1>
+  <p class="lede">Researchers often treat four short scales of “conspiracy mentality” as substitutes for one another. All four do reflect one common trait, and that trait does most of the work. But two of the scales carry something more, so they are not strictly interchangeable.</p>
 
-  <div class="controls">
-    <div><span class="ctl-label">Show</span>
-      <div class="seg" role="group" aria-label="View">
-        <button data-view="share" aria-pressed="true">Share of variance</button>
-        <button data-view="load" aria-pressed="false">Loadings</button>
-      </div>
-    </div>
-    <div><span class="ctl-label">Scale</span>
-      <div class="seg" role="group" aria-label="Scale filter" id="scaleSeg"></div>
-    </div>
-  </div>
-  <div class="legend">
-    <span><i class="sw" style="background:var(--gen)"></i>Common factor (shared by all four scales)</span>
-    <span><i class="sw" style="background:var(--spec)"></i>Specific to the item’s own scale</span>
-    <span id="legRes"><i class="sw" style="background:var(--track);border:1px solid #D8D1C3"></i>Not explained by either</span>
+  <h2>Three conditions for interchangeability</h2>
+  <p class="sub">A scale can stand in for the others only if it reflects the common trait, carries no extra content that shapes answers to specific conspiracy questions, and scores people the way the common trait does. Hover over or tap a mark for the evidence.</p>
+  <div class="panel" style="overflow-x:auto">
+    <table class="sc" id="scorecard"></table>
   </div>
 
-  <div class="chart" id="chart" aria-describedby="howto"></div>
+  <h2>The common factor does most of the work</h2>
+  <p class="sub">Share of variance in respondents’ overall belief in specific conspiracy theories (the BCTI) that each factor accounts for uniquely, from the bifactor model.</p>
+  <div class="panel">
+    <div class="legend"><span><i class="sw" style="background:var(--gen)"></i>Common factor</span><span><i class="sw" style="background:var(--spec)"></i>Scale-specific factors</span></div>
+    <div id="bcti"></div>
+  </div>
 
-  <div class="cards" id="cards"></div>
-
-  <h2>How to read it</h2>
-  <p class="note" id="howto">In a bifactor model each item loads on one general factor and on one factor specific to its scale, and the two are uncorrelated. Squaring each standardized loading gives the share of the item’s variance that factor accounts for. A scale is a clean measure of the common trait when its items are mostly green. The number on each scale card, omega-hierarchical for the specific factor, is the share of the scale score’s variance that comes from the scale’s own factor rather than the common one.</p>
+  <h2>But two scales carry something extra</h2>
+  <p class="sub">What is left in each scale after the common factor is removed. For the ACT and the CMQ, the remainder is small and unrelated to specific beliefs. For the GCB-5 and the GMC, it is not.</p>
+  <div class="panel">
+    <div class="legend"><span><i class="sw" style="background:var(--gen)"></i>No partisan link</span><span><i class="sw" style="background:var(--spec)"></i>Partisan link</span></div>
+    <div style="font-size:13px;font-weight:600;margin:4px 0 2px">Correlation of each scale’s leftover factor with Republican identity</div>
+    <div id="rep"></div>
+  </div>
+  <div class="callouts">
+    <div class="callout"><h3>GCB-5: paranormal content</h3><div class="big">β = .52, .53</div><p>Its leftover factor predicted belief in the Roswell and Area 51 cover-ups as strongly as the common factor did. The ACT’s leftover did not (β = .03, −.03). It was also related to odd and magical thinking.</p></div>
+    <div class="callout"><h3>GMC: partisan content</h3><div class="big">r = .28</div><p>Its leftover factor tracked Republican identity and predicted a cluster of partisan-coded beliefs in 2023: SARS as a bioweapon, the Obama “birther” claim, anti-vaccine claims, and climate change as a hoax.</p></div>
+    <div class="callout"><h3>GMC: compressed scores</h3><div class="big">~1.5 and ~1.25 SD</div><p>Relative to the common factor, the GMC places people low on the trait about 1.5 standard deviations higher, and people high on the trait about 1.25 lower.</p></div>
+  </div>
 
   <details>
-    <summary>Show the full table</summary>
+    <summary>Item-level loadings (Table 4)</summary>
+    <p class="dnote">Single items should be read with care. Outside the GMC, the scale-specific loadings were weak and inconsistent in sign, so a large value on one item, such as CMQ.2, does not mean the scale carries coherent extra content. The scale-level results above are the ones the paper’s conclusions rest on.</p>
     <div id="tableWrap"></div>
   </details>
 
   <div class="cite">
-    Smallpage, S. M., Jensen, A. L., &amp; Askew, R. L. (2026). The common factor of conspiracy mentality: A bifactor analysis of four short-form measures of general conspiracy thinking. <i>Frontiers in Psychology</i>, 17, 1941055. <a href="https://doi.org/10.3389/fpsyg.2026.1941055">doi:10.3389/fpsyg.2026.1941055</a>. Loadings from Table 4 and item wordings from Table 1, reproduced under CC BY 4.0. Data: Kay &amp; Slovic (2026), U.S. Prolific sample, N = 492.
+    Smallpage, S. M., Jensen, A. L., &amp; Askew, R. L. (2026). The common factor of conspiracy mentality: A bifactor analysis of four short-form measures of general conspiracy thinking. <i>Frontiers in Psychology</i>, 17, 1941055. <a href="https://doi.org/10.3389/fpsyg.2026.1941055">doi:10.3389/fpsyg.2026.1941055</a>. Results from Tables 4 and 5 and the text, reproduced under CC BY 4.0. Data: Kay &amp; Slovic (2026), U.S. Prolific sample, N = 492. Scales: ACT, American Conspiracy Theory Scale; CMQ, Conspiracy Mentality Questionnaire; GCB-5, Generic Conspiracist Beliefs short form; GMC, General Measure of Conspiracism.
   </div>
 </div>
 <div class="tip" id="tip" role="tooltip"></div>
 
 <script>
-const SCALES = {
-  ACT:{name:"ACT", full:"American Conspiracy Theory Scale", omegaS:.02, alpha:.85,
-       take:"Apart from its first item, on who runs things in a democracy, almost entirely the common factor."},
-  CMQ:{name:"CMQ", full:"Conspiracy Mentality Questionnaire", omegaS:.05, alpha:.83,
-       take:"Close to a pure measure of the common factor, except item 2, on politicians’ true motives."},
-  GCB:{name:"GCB-5", full:"Generic Conspiracist Beliefs, short form", omegaS:.03, alpha:.82,
-       take:"Mostly the common factor, but its alien-contact item carries paranormal content, and its specific factor predicted belief in extraterrestrial cover-ups."},
-  GMC:{name:"GMC", full:"General Measure of Conspiracism", omegaS:.33, alpha:.89,
-       take:"A third of its score variance comes from its own specific factor. That factor tracked Republican identity (r = .28) and partisan-coded conspiracy beliefs."}
-};
-// [id, scale, wording, unidimensional λ, general λ, specific λ]
-const ITEMS = [
- ["ACT.1","ACT","Even though we live in a democracy, a few people will always run things anyway.",.67,.67,.56],
- ["ACT.2","ACT","The people who really “run” the country are not known to the voters.",.82,.81,.11],
- ["ACT.3","ACT","Big events like wars, the recent recession, and the outcomes of elections are controlled by small groups of people who are working in secret against the rest of us.",.89,.90,-.05],
- ["ACT.4","ACT","Much of our lives are being controlled by plots hatched in secret places.",.83,.84,-.10],
- ["CMQ.1","CMQ","Many very important things happen in the world, which the public is never informed about.",.78,.72,.28],
- ["CMQ.2","CMQ","Politicians usually do not tell us the true motives for their decisions.",.62,.57,.66],
- ["CMQ.3","CMQ","Government agencies closely monitor all citizens.",.69,.68,.05],
- ["CMQ.4","CMQ","Events which superficially seem to lack a connection are often the result of secret activities.",.78,.83,-.16],
- ["CMQ.5","CMQ","There are secret organizations that greatly influence political decisions.",.87,.88,.02],
- ["GCB.1","GCB","The government permits or perpetrates acts of terrorism on its own soil, disguising its involvement.",.75,.76,.09],
- ["GCB.2","GCB","Evidence of alien contact is being concealed from the public.",.57,.54,.41],
- ["GCB.3","GCB","New and advanced technology which would harm current industry is being suppressed.",.62,.59,.28],
- ["GCB.4","GCB","Certain significant events have been the result of the activity of a small group who secretly manipulate world events.",.83,.92,-.22],
- ["GCB.5","GCB","Experiments involving new drugs or technologies are routinely carried out on the public without their knowledge or consent.",.84,.80,.10],
- ["GMC.1","GMC","Conspiracy theories accurately depict real life events.",.93,.75,.55],
- ["GMC.2","GMC","The information contained within conspiracy theories is generally true.",.90,.75,.50],
- ["GMC.3.r","GMC","When I hear conspiracy theories, I feel they are untrue. (reversed)",.80,.62,.51],
- ["GMC.4.r","GMC","Conspiracy theories contain information, which has proved to be false. (reversed)",.65,.46,.47],
- ["GMC.5","GMC","I have heard several conspiracy theories, which I believe to be true.",.87,.75,.44]
-].map(([id,sc,w,u,g,s])=>({id,sc,w,u,g,s,gs:g*g,ss:s*s}));
-
-let view="share", filter="all";
-const f2 = x => (x<0?"−":"")+Math.abs(x).toFixed(2).replace(/^0/,"");
-const pct = x => Math.round(x*100)+"%";
-
-// scale filter buttons
-const segEl=document.getElementById("scaleSeg");
-[["all","All"],["ACT","ACT"],["CMQ","CMQ"],["GCB","GCB-5"],["GMC","GMC"]].forEach(([k,l])=>{
-  const b=document.createElement("button"); b.textContent=l; b.dataset.f=k;
-  b.setAttribute("aria-pressed",k==="all"); b.onclick=()=>{filter=k; segEl.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.f===k)); render();};
-  segEl.appendChild(b);
-});
-document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{
-  view=b.dataset.view; document.querySelectorAll("[data-view]").forEach(x=>x.setAttribute("aria-pressed",x===b)); render();
-});
-
+const S=["ACT","CMQ","GCB-5","GMC"];
+const FULL={"ACT":"American Conspiracy Theory","CMQ":"Conspiracy Mentality Questionnaire","GCB-5":"Generic Conspiracist Beliefs","GMC":"General Measure of Conspiracism"};
+const COND=[
+ {t:"1. Reflects the common conspiracy-mentality trait",
+  r:{"ACT":[1,"Items load on the common factor from .67 to .90."],
+     "CMQ":[1,"Items load on the common factor from .57 to .88."],
+     "GCB-5":[1,"Items load on the common factor from .54 to .92."],
+     "GMC":[1,"Items load on the common factor from .46 to .75. Its specific ωh is .33, the highest of the four, but the common factor still accounts for most of its variance."]}},
+ {t:"2. No extra content that shapes answers to specific conspiracy beliefs",
+  r:{"ACT":[1,"Leftover factor unrelated to the BCTI (unique share < .01)."],
+     "CMQ":[1,"Leftover factor unrelated to the BCTI (unique share < .01)."],
+     "GCB-5":[0,"Leftover factor predicted the two extraterrestrial items (β = .52, .53) and was related to odd and magical thinking."],
+     "GMC":[0,"Leftover factor tracked Republican identity (r = .28) and predicted four partisan-coded beliefs."]}},
+ {t:"3. Scores people the way the common trait does",
+  r:{"ACT":[1,"Scores follow the common factor across its range."],
+     "CMQ":[1,"Scores follow the common factor across its range."],
+     "GCB-5":[1,"Scores follow the common factor across its range."],
+     "GMC":[0,"Scores compressed toward the middle: about 1.5 SD higher than the common factor at the low end and 1.25 SD lower at the high end."]}}
+];
 const tip=document.getElementById("tip");
-function showTip(e,it){
-  const sc=SCALES[it.sc];
-  tip.innerHTML=`<b>${it.id}</b> · ${sc.name}<div class="w">“${it.w}”</div>
-  <table>
-   <tr><td>Common factor loading</td><td>${f2(it.g)}</td></tr>
-   <tr><td>Scale-specific loading</td><td>${f2(it.s)}</td></tr>
-   <tr><td>Loading in a one-factor model of ${sc.name} alone</td><td>${f2(it.u)}</td></tr>
-   <tr><td>Variance from common factor</td><td>${pct(it.gs)}</td></tr>
-   <tr><td>Variance from scale-specific factor</td><td>${pct(it.ss)}</td></tr>
-  </table>`;
-  tip.style.opacity=1; moveTip(e);
-}
-function moveTip(e){
-  const r=tip.getBoundingClientRect(); let x,y;
-  if(e.clientX!==undefined && e.type.startsWith("mouse")){x=e.clientX+14;y=e.clientY+14;}
-  else{const b=e.currentTarget.getBoundingClientRect(); x=b.left+80; y=b.bottom+6;}
-  if(x+r.width>innerWidth-8) x=innerWidth-r.width-8;
-  if(y+r.height>innerHeight-8) y=Math.max(8,y-r.height-30);
-  tip.style.left=x+"px"; tip.style.top=y+"px";
-}
-const hideTip=()=>tip.style.opacity=0;
+function show(e,html){tip.innerHTML=html;tip.style.opacity=1;move(e);}
+function move(e){const r=tip.getBoundingClientRect();let x,y;
+  if(e.type&&e.type.startsWith("mouse")){x=e.clientX+14;y=e.clientY+14;}else{const b=e.currentTarget.getBoundingClientRect();x=b.left;y=b.bottom+6;}
+  if(x+r.width>innerWidth-8)x=innerWidth-r.width-8; if(y+r.height>innerHeight-8)y=Math.max(8,y-r.height-30);
+  tip.style.left=x+"px";tip.style.top=y+"px";}
+const hide=()=>tip.style.opacity=0;
+function hover(el,html){el.tabIndex=0;el.addEventListener("mouseenter",e=>show(e,html));el.addEventListener("mousemove",move);el.addEventListener("mouseleave",hide);el.addEventListener("focus",e=>show(e,html));el.addEventListener("blur",hide);}
 
-function render(){
-  document.getElementById("legRes").style.display = view==="share"?"":"none";
-  const chart=document.getElementById("chart"); chart.innerHTML="";
-  const keys = filter==="all"?Object.keys(SCALES):[filter];
-  const MIN=-.3, MAX=1, X=v=>((v-MIN)/(MAX-MIN))*100;
-  keys.forEach(k=>{
-    const sc=SCALES[k], g=document.createElement("div"); g.className="group";
-    g.innerHTML=`<div class="ghead"><div class="gname">${sc.name}<small>${sc.full}</small></div><div class="gstat">specific ω<sub>h</sub> = ${f2(sc.omegaS)}</div></div>`;
-    ITEMS.filter(i=>i.sc===k).forEach(it=>{
-      const row=document.createElement("div"); row.tabIndex=0;
-      if(view==="share"){
-        row.className="row";
-        row.innerHTML=`<div class="iid">${it.id}</div>
-          <div class="track" aria-hidden="true"><div class="seg-g" style="width:${it.gs*100}%"></div><div class="seg-s" style="left:${it.gs*100}%;width:${it.ss*100}%"></div></div>
-          <div class="val">${pct(it.gs)} · ${pct(it.ss)}</div>`;
-        row.setAttribute("aria-label",`${it.id}: ${pct(it.gs)} common factor, ${pct(it.ss)} scale-specific`);
-      } else {
-        row.className="lrow";
-        const bar=(v,cls)=>{const a=X(Math.min(0,v)),b=X(Math.max(0,v));return `<div class="lb ${cls}" style="left:${a}%;width:${b-a}%"></div>`;};
-        row.innerHTML=`<div class="iid">${it.id}</div>
-          <div class="lplot" aria-hidden="true"><div class="zero" style="left:${X(0)}%"></div>${bar(it.g,"g")}${bar(it.s,"s")}</div>
-          <div class="val">${f2(it.g)} · ${f2(it.s)}</div>`;
-        row.setAttribute("aria-label",`${it.id}: common loading ${f2(it.g)}, specific loading ${f2(it.s)}`);
-      }
-      row.addEventListener("mouseenter",e=>showTip(e,it));
-      row.addEventListener("mousemove",moveTip);
-      row.addEventListener("mouseleave",hideTip);
-      row.addEventListener("focus",e=>showTip(e,it));
-      row.addEventListener("blur",hideTip);
-      g.appendChild(row);
-    });
-    chart.appendChild(g);
-  });
-  if(view==="load"){
-    const ax=document.createElement("div"); ax.className="axis";
-    ax.innerHTML=`<div></div><div class="ticks">${[-.25,0,.25,.5,.75,1].map(t=>`<span style="left:${X(t)}%">${t===0?"0":f2(t)}</span>`).join("")}</div><div></div>`;
-    chart.appendChild(ax);
-  }
-}
-render();
+// scorecard
+const sc=document.getElementById("scorecard");
+sc.innerHTML=`<thead><tr><th class="cond">Condition</th>${S.map(s=>`<th><span class="scale-h">${s}<small>${FULL[s]}</small></span></th>`).join("")}</tr></thead><tbody></tbody>`;
+const tb=sc.querySelector("tbody");
+COND.forEach(c=>{const tr=document.createElement("tr");
+  tr.innerHTML=`<td class="cond">${c.t}</td>`;
+  S.forEach(s=>{const [ok,ev]=c.r[s];const td=document.createElement("td");
+    td.innerHTML=`<span class="mark ${ok?"ok":"no"}" aria-label="${s}: ${ok?"meets":"does not meet"} this condition">${ok?"✓":"✕"}<span class="t">${ok?"Meets":"Fails"}</span></span>`;
+    hover(td.firstChild,`<b>${s}</b> · ${ok?"meets":"does not meet"} this condition<br>${ev}`);tr.appendChild(td);});
+  tb.appendChild(tr);});
 
-// cards
-document.getElementById("cards").innerHTML=Object.values(SCALES).map(s=>`
-  <div class="card"><h3>${s.name}</h3><div class="full">${s.full}</div>
-  <div class="num">${f2(s.omegaS)}</div><div class="numlab">specific ω<sub>h</sub>: share of score variance from the scale’s own factor</div>
-  <p>${s.take}</p></div>`).join("");
+// BCTI unique shares (semi-partial eta^2, Table 5)
+const B=[["Common factor",.60,.60,"gen"],["GMC leftover",.03,.03,"spec"],["GCB-5 leftover",.02,.02,"spec"],["CMQ leftover",.005,"<.01","spec"],["ACT leftover",.005,"<.01","spec"]];
+const bc=document.getElementById("bcti");
+B.forEach(([l,v,lab,c])=>{const d=document.createElement("div");d.className="brow";
+  d.innerHTML=`<div class="blab">${l}</div><div class="btrack"><div class="bar" style="left:0;width:${v/.7*100}%;background:var(--${c})"></div></div><div class="bval">${typeof lab==="number"?lab.toFixed(2).replace(/^0/,""):lab}</div>`;
+  hover(d,`<b>${l}</b><br>Unique share of BCTI variance (semi-partial η²): ${typeof lab==="number"?lab.toFixed(2).replace(/^0/,""):lab}`);bc.appendChild(d);});
+bc.insertAdjacentHTML("beforeend",`<div class="ticks">${[0,.2,.4,.6].map(t=>`<span style="left:${t/.7*100}%">${t===0?"0":t.toFixed(1).replace(/^0/,"")}</span>`).join("")}</div>`);
 
-// table
-document.getElementById("tableWrap").innerHTML=`<table class="data"><thead><tr><th>Item</th><th>Wording</th><th class="n">One-factor λ</th><th class="n">Common λ</th><th class="n">Specific λ</th></tr></thead><tbody>${
-  ITEMS.map(i=>`<tr><td>${i.id}</td><td>${i.w}</td><td class="n">${f2(i.u)}</td><td class="n">${f2(i.g)}</td><td class="n">${f2(i.s)}</td></tr>`).join("")}</tbody></table>`;
+// Republican identity correlations
+const R=[["ACT",-.06,0],["CMQ",-.01,0],["GCB-5",-.11,0],["GMC",.28,1]];
+const rp=document.getElementById("rep"), MIN=-.2, MAX=.35, X=v=>(v-MIN)/(MAX-MIN)*100;
+R.forEach(([s,v,flag])=>{const d=document.createElement("div");d.className="brow";
+  const a=X(Math.min(0,v)),b=X(Math.max(0,v));
+  d.innerHTML=`<div class="blab">${s} leftover</div><div class="btrack"><div class="zero" style="left:${X(0)}%"></div><div class="bar" style="left:${a}%;width:${b-a}%;background:var(--${flag?"spec":"gen"})"></div></div><div class="bval">${(v<0?"−":"")+Math.abs(v).toFixed(2).replace(/^0/,"")}</div>`;
+  hover(d,`<b>${s}</b> leftover factor<br>Correlation with Republican identity: r = ${(v<0?"−":"")+Math.abs(v).toFixed(2).replace(/^0/,"")}`);rp.appendChild(d);});
+rp.insertAdjacentHTML("beforeend",`<div class="ticks">${[-.2,-.1,0,.1,.2,.3].map(t=>`<span style="left:${X(t)}%">${t===0?"0":(t<0?"−":"")+Math.abs(t).toFixed(1).replace(/^0/,"")}</span>`).join("")}</div>`);
+
+// item table
+const IT=[["ACT.1","Even though we live in a democracy, a few people will always run things anyway.",.67,.67,.56],["ACT.2","The people who really “run” the country are not known to the voters.",.82,.81,.11],["ACT.3","Big events like wars, the recent recession, and the outcomes of elections are controlled by small groups of people who are working in secret against the rest of us.",.89,.90,-.05],["ACT.4","Much of our lives are being controlled by plots hatched in secret places.",.83,.84,-.10],["CMQ.1","Many very important things happen in the world, which the public is never informed about.",.78,.72,.28],["CMQ.2","Politicians usually do not tell us the true motives for their decisions.",.62,.57,.66],["CMQ.3","Government agencies closely monitor all citizens.",.69,.68,.05],["CMQ.4","Events which superficially seem to lack a connection are often the result of secret activities.",.78,.83,-.16],["CMQ.5","There are secret organizations that greatly influence political decisions.",.87,.88,.02],["GCB.1","The government permits or perpetrates acts of terrorism on its own soil, disguising its involvement.",.75,.76,.09],["GCB.2","Evidence of alien contact is being concealed from the public.",.57,.54,.41],["GCB.3","New and advanced technology which would harm current industry is being suppressed.",.62,.59,.28],["GCB.4","Certain significant events have been the result of the activity of a small group who secretly manipulate world events.",.83,.92,-.22],["GCB.5","Experiments involving new drugs or technologies are routinely carried out on the public without their knowledge or consent.",.84,.80,.10],["GMC.1","Conspiracy theories accurately depict real life events.",.93,.75,.55],["GMC.2","The information contained within conspiracy theories is generally true.",.90,.75,.50],["GMC.3.r","When I hear conspiracy theories, I feel they are untrue. (reversed)",.80,.62,.51],["GMC.4.r","Conspiracy theories contain information, which has proved to be false. (reversed)",.65,.46,.47],["GMC.5","I have heard several conspiracy theories, which I believe to be true.",.87,.75,.44]];
+const f2=x=>(x<0?"−":"")+Math.abs(x).toFixed(2).replace(/^0/,"");
+document.getElementById("tableWrap").innerHTML=`<table class="data"><thead><tr><th>Item</th><th>Wording</th><th class="n">One-factor λ</th><th class="n">Common λ</th><th class="n">Specific λ</th></tr></thead><tbody>${IT.map(i=>`<tr><td>${i[0]}</td><td>${i[1]}</td><td class="n">${f2(i[2])}</td><td class="n">${f2(i[3])}</td><td class="n">${f2(i[4])}</td></tr>`).join("")}</tbody></table>`;
 </script>
 </body>
 </html>
