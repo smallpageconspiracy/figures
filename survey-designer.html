@@ -207,6 +207,7 @@ function terms(s){return s.lic?s.lic:"No terms of use on record. Check with the 
 function fmtOptions(s){
   const out=[];const seen=new Set();
   (s.formats||[]).forEach(f=>{if(!f.anchors&&!f.n)return;const key=(f.n||"")+"|"+(f.anchors||"");if(seen.has(key))return;seen.add(key);out.push(f)});
+  if(!out.some(f=>parseAnchors(f).labels.length)){const r=parseRF(s.rf);if(r.labels.length)out.unshift({n:r.labels.length,anchors:"",preamble:"",_pa:r})}
   return out.sort((p,q)=>{const r=f=>{const x=parseAnchors(f);return x.labels.length?(x.poles?1:0):2};return r(p)-r(q)});
 }
 function renderList(){
@@ -246,6 +247,7 @@ function detailHtml(s){
 /* ---------- survey blocks ---------- */
 function parseAnchors(f){
   if(!f)return {labels:[],poles:false};
+  if(f._pa)return f._pa;
   const cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):t;
   const clean=t=>String(t||"").replace(/\([^)]*\)/g,"").replace(/\s+/g," ").trim();
   let n=parseInt(f.n,10)||0;let a=clean(f.anchors);
@@ -257,6 +259,40 @@ function parseAnchors(f){
   if(m.length===2&&n>=2){const lo=strip(m[0]),hi=strip(m[1]);
     return {labels:Array.from({length:n},(_,i)=>i===0?lo:i===n-1?hi:String(i+1)),poles:true}}
   return {labels:[],poles:false};
+}
+function parseRF(rf){
+  const none={labels:[],poles:false};
+  if(!rf)return none;
+  const cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):t;
+  const q=t=>t.replace(/^[\s"'(]+|[\s"').,:]+$/g,"");
+  const tidy=t=>{let x=q(String(t));x=x.replace(/^(?:and|or)\s+/i,"");x=q(x).replace(/^\(?[ivx]+\)\s*/i,"").replace(/[—–-]\s*\d+$/,"");return cap(q(x).replace(/\s+/g," ").trim())};
+  const a=String(rf).replace(/[“”]/g,'"').replace(/[‘’]/g,"'");
+  if(/^(?:items?|study|hostile|financial)\b[^:]{0,40}:|\(VOL\)/i.test(a))return none;
+  if(/forced choice|select[- ]all|ranking|ladder|thermometer|^mixed|see item|conjoint|composite|single choice|true\s*\/\s*false|yes\s*\/\s*no|not (?:stated|printed|given|restated)|check article|exact points/i.test(a.slice(0,70)))return none;
+  let n=0;const N=a.match(/\b(\d{1,2})[- ](?:point|option|categor)/i);if(N)n=parseInt(N[1],10);
+  const wordN={three:3,four:4,five:5,six:6,seven:7,nine:9};const wm=a.match(/\b(three|four|five|six|seven|nine)[- ](?:point|categor)/i);if(!n&&wm)n=wordN[wm[1].toLowerCase()];
+  const rg=a.match(/^\s*(\d{1,2})\s*[-–]\s*(\d{1,2})\s*[,:]/);if(!n&&rg)n=parseInt(rg[2],10)-parseInt(rg[1],10)+1;
+  let head=a.split(/;|\.\s|\.$|\((?:Studies|Study|as |per |p\.|Table|Appendix|endpoint|intermediate|labels|order|no |midpoint|both|in the|Experiment|Sample|37|GTS|lifetime|full|verify|Wuttke)/)[0];
+  head=head.replace(/^[^:]{0,60}:\s*/,"");
+  const okL=t=>t&&t.length<=45&&/[A-Za-z]{2}/.test(t)&&!/point|likert|scale\b|scored|reported|collapsed|items?\b|recod/i.test(t);
+  // A: numbered anchors
+  const pairs=[];let m;
+  const re=/(-?\d{1,2})\s*(?:=\s*|\(\s*)["']?([A-Za-z][A-Za-z '\/-]*?)["']?\s*\)?\s*(?=,|…|\.\.\.|\bto\b|–|$|\s-\s|\()/g;
+  while((m=re.exec(head)))pairs.push([parseInt(m[1],10),tidy(m[2])]);
+  if(pairs.length<2){pairs.length=0;const re2=/(?:^|…|\.\.\.|\bto\b|,)\s*(-?\d{1,2})\s+["']?([A-Za-z][A-Za-z '\/-]*?)["']?\s*(?=…|\.\.\.|\bto\b|,|\(|$)/g;while((m=re2.exec(head)))pairs.push([parseInt(m[1],10),tidy(m[2])]);}
+  if(pairs.length>=2&&pairs.every(p=>okL(p[1]))){const lo=Math.min(...pairs.map(p=>p[0])),hi=Math.max(...pairs.map(p=>p[0]));const k=hi-lo+1;
+    if(k>=3&&k<=11&&(!n||n===k)){const map=new Map(pairs);const L=Array.from({length:k},(_,i)=>map.get(lo+i)||String(lo+i));
+      return {labels:L,poles:pairs.length!==k};}}
+  // B: full list of labels
+  const bare=/^(?:somewhat|strongly|a little|slightly|moderately|very|definitely|probably)$/i;
+  const parts=head.split(/\s*,\s*|\s+\/\s+/).map(t=>t.replace(/^\(?[ivx]+\)\s*/i,"").replace(/^\d+\s*=?\s*/,"").replace(/\s*\(\d+\)\s*$/,"")).map(tidy).filter(Boolean);
+  if(parts.length>=3&&parts.every(p=>okL(p)&&!bare.test(p))&&(!n||parts.length===n))return {labels:parts,poles:false};
+  // C: endpoint phrases with known number of points
+  const W="(?:strongly|completely|totally|very|definitely|fully|extremely|not at all|agree|disagree)";
+  const e=a.match(new RegExp("(?:point|categor\\w*|scales?|Likert(?:-type)?)\\b[^.;]{0,40}?[\"']?("+W+"[A-Za-z ]*?)[\"']?\\s*(?:\\bto\\b|–|…|\\.\\.\\.|-)\\s*[\"']?("+W+"[A-Za-z ]*?)[\"']?\\s*(?=[,.(;]|$)","i"));
+  if(e&&n>=3&&n<=11){const lo=tidy(e[1]),hi=tidy(e[2]);
+    if(okL(lo)&&okL(hi)&&lo.split(" ").length>=2&&hi.split(" ").length>=2)return {labels:Array.from({length:n},(_,i)=>i===0?lo:i===n-1?hi:String(i+1)),poles:true};}
+  return none;
 }
 function isAttention(s){return /attention|data quality/i.test(s.family||"")}
 function addBlock(id,ctl){
@@ -378,7 +414,7 @@ const tag=s=>String(s||"").replace(/[^A-Za-z0-9_.\-]+/g,"_").slice(0,40);
 function exportQsf(){
   const SID=rid("SV_",15),name=$("#surveyName").value||"Survey";const now=new Date().toISOString().slice(0,19).replace("T"," ");
   const el=(Element,Primary,Secondary,Payload,Tertiary=null)=>({SurveyID:SID,Element,PrimaryAttribute:Primary,SecondaryAttribute:Secondary,TertiaryAttribute:Tertiary,Payload});
-  const qs=[],blocks=[],trash={Type:"Trash",Description:"Trash / Unused Questions",ID:rid("BL_",15),BlockElements:[]},flow=[];let q=0;const used=new Set();const uniq=t=>{let u=t||"Q",k=2;while(used.has(u)){u=(t||"Q")+"_"+k++}used.add(u);return u};
+  const qs=[],blocks=[],trash={Type:"Trash",Description:"Trash / Unused Questions",ID:rid("BL_",15),BlockElements:[]},flow=[];let q=0;const used=new Set(),notes=[];const uniq=t=>{let u=t||"Q",k=2;while(used.has(u)){u=(t||"Q")+"_"+k++}used.add(u);return u};
   const QDesc=t=>{const s=String(t).replace(/<[^>]+>/g,"");return s.length>100?s.slice(0,97)+"...":s};
   function addQ(p){q++;const QID="QID"+q;p.QuestionID=QID;p.DataVisibility={Private:false,Hidden:false};p.QuestionDescription=QDesc(p.QuestionText);p.Language=[];p.DefaultChoices=false;p.DataExportTag=uniq(p.DataExportTag);
     qs.push(el("SQ",QID,QDesc(p.QuestionText),p));return QID}
@@ -392,10 +428,10 @@ function exportQsf(){
         Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:order.length+1,NextAnswerId:aorder.length+1}));
     }else{
       if(b.stem)ids.push(addQ({QuestionText:stem,DataExportTag:st+"_intro",QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));
-      its(s,b).forEach(it=>{const ch={},co=[];const OL=it.opts||(L.length?L:["INSERT RESPONSE OPTION"]);
-        if(it.opts&&it.opts.length===1&&/text entry/i.test(it.opts[0])){ids.push(addQ({QuestionText:it.w+(it.note?`<br><br><span style="color:#888">[Note for the survey builder: ${esc(it.note)}]</span>`:""),DataExportTag:tag(it.id),QuestionType:"TE",Selector:"SL",Configuration:{QuestionDescriptionOption:"UseText"},Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));return}
+      its(s,b).forEach(it=>{if(it.note)notes.push(`<b>${esc(it.id)}</b> (${esc(s.short||s.name)}): ${esc(it.note)}`);const ch={},co=[];const OL=it.opts||(L.length?L:["INSERT RESPONSE OPTION"]);
+        if(it.opts&&it.opts.length===1&&/text entry/i.test(it.opts[0])){ids.push(addQ({QuestionText:it.w,DataExportTag:tag(it.id),QuestionType:"TE",Selector:"SL",Configuration:{QuestionDescriptionOption:"UseText"},Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));return}
         OL.forEach((l,k)=>{ch[k+1]={Display:l};co.push(k+1)});
-        ids.push(addQ({QuestionText:it.w+(it.note?`<br><br><span style="color:#888">[Note for the survey builder: ${esc(it.note)}]</span>`:""),DataExportTag:tag(it.id),QuestionType:"MC",Selector:/one or more|all that apply/i.test(it.w)?"MAVR":"SAVR",SubSelector:"TX",
+        ids.push(addQ({QuestionText:it.w,DataExportTag:tag(it.id),QuestionType:"MC",Selector:/one or more|all that apply/i.test(it.w)?"MAVR":"SAVR",SubSelector:"TX",
           Configuration:{QuestionDescriptionOption:"UseText"},Choices:ch,ChoiceOrder:co,Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:co.length+1,NextAnswerId:1}))});
     }
     const BID=rid("BL_",15);const isDef=bi===0;blocks.push({Type:isDef?"Default":"Standard",SubType:"",Description:`${s.short||s.name} (${its(s,b).length} items)`,ID:BID,
@@ -405,8 +441,8 @@ function exportQsf(){
   const srcT="SOURCES (not shown to respondents). Item wording in this survey was verified against these original sources:<br><br>"+S.blocks.map(b=>{const s=scaleById(b.id);return `<b>${esc(s.short||s.name)}</b>: ${esc(s.citation||"")}`}).join("<br><br>");
   const riderT="PERMISSIONS AND TERMS OF USE (not shown to respondents). Some of these scales may require permission from their authors or publishers before fielding, and all should be cited. Terms on record in the Smallpage Item Bank:<br><br>"+S.blocks.map(b=>{const s=scaleById(b.id);return `<b>${esc(s.short||s.name)}</b>: ${esc(terms(s))}`}).join("<br><br>");
   const dbq=(t,tg)=>addQ({QuestionText:t,DataExportTag:tg,QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1});
-  const sq=dbq(srcT,"sources_note"),rq=dbq(riderT,"permissions_note");
-  blocks.push({Type:"Standard",SubType:"",Description:"Sources and permissions (not in survey flow; not shown to respondents)",ID:rid("BL_",15),BlockElements:[{Type:"Question",QuestionID:sq},{Type:"Question",QuestionID:rq}],Options:{BlockLocking:"false",RandomizeQuestions:"false",BlockVisibility:"Expanded"}});
+  const sq=dbq(srcT,"sources_note"),rq=dbq(riderT,"permissions_note");const nq=notes.length?dbq("NOTES FOR THE SURVEY BUILDER (not shown to respondents):<br><br>"+notes.join("<br><br>"),"builder_notes"):null;
+  blocks.push({Type:"Standard",SubType:"",Description:"Sources and permissions (not in survey flow; not shown to respondents)",ID:rid("BL_",15),BlockElements:[{Type:"Question",QuestionID:sq},{Type:"Question",QuestionID:rq}].concat(nq?[{Type:"Question",QuestionID:nq}]:[]),Options:{BlockLocking:"false",RandomizeQuestions:"false",BlockVisibility:"Expanded"}});
   const RS=rid("RS_",15),UID=rid("UR_",15);
   const out={SurveyEntry:{SurveyID:SID,SurveyName:name,SurveyDescription:name,SurveyOwnerID:UID,SurveyBrandID:"default",DivisionID:null,SurveyLanguage:"EN",SurveyActiveResponseSet:RS,SurveyStatus:"Inactive",SurveyStartDate:"0000-00-00 00:00:00",SurveyExpirationDate:"0000-00-00 00:00:00",SurveyCreationDate:now,CreatorID:UID,LastModified:now,LastAccessed:"0000-00-00 00:00:00",LastActivated:"0000-00-00 00:00:00",Deleted:null},
     SurveyElements:[el("BL","Survey Blocks",null,blocks),el("FL","Survey Flow",null,{Type:"Root",FlowID:"FL_1",Flow:flow,Properties:{Count:flow.length+1}}),
