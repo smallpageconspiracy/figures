@@ -51,10 +51,17 @@ header p{color:var(--ink2);max-width:760px;margin:0;font-size:14.5px}
 .fam{display:inline-block;font-size:11px;font-weight:600;color:var(--hedge);background:var(--hedge-soft);border-radius:999px;padding:1px 8px;margin-right:6px}
 .sbtns{display:flex;gap:6px;flex-shrink:0}
 .detail{margin-top:10px;font-size:13.5px;color:var(--ink2)}
+.detail .def{margin:0 0 8px;color:var(--ink2)}
+.note{font-size:12px;color:var(--muted);margin:4px 0}
+.chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:6px 0 4px}
+.clab{font-size:12px;color:var(--ink2);margin-right:4px}
+.chip{border:1px solid var(--rule);background:#fff;border-radius:999px;padding:2px 9px;font-size:12px;cursor:pointer}
+.chip:hover{background:var(--sunk)}
+.chip.on{background:var(--hedge);border-color:var(--hedge);color:#fff}
 .detail dl{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;margin:0 0 10px}
 .detail dt{color:var(--muted);font-size:12.5px}
 .detail dd{margin:0}
-.detail ol{margin:6px 0 0;padding-left:22px}
+.detail ol{margin:8px 0 0;padding-left:22px}
 .detail li{margin:3px 0}
 .rk{font-size:11px;font-weight:600;color:var(--warn);background:var(--warn-soft);border-radius:4px;padding:0 4px;margin-left:4px}
 .terms{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:12.5px;margin:8px 0}
@@ -173,7 +180,7 @@ $("#gateForm").onsubmit=async e=>{e.preventDefault();$("#pwErr").textContent="";
   try{DATA=await unlock($("#pw").value);start()}catch(err){$("#pwErr").textContent="That password didn’t work."}};
 
 /* ---------- state ---------- */
-let DATA=null;const S={blocks:[],open:new Set()};
+let DATA=null;const S={blocks:[],open:new Set(),pick:{}};
 function scaleById(id){return DATA.scales.find(s=>s.id===id)}
 const langs=s=>s._langs||(s._langs=[...new Set(s.items.map(it=>it.lang||"English"))]);
 const defLang=s=>langs(s).includes("English")?"English":langs(s)[0];
@@ -214,20 +221,26 @@ function renderList(){
       <div class="sbtns"><button class="btn sm" data-act="view">${open?"Hide":"View"}</button><button class="btn sm ${inS?"":"primary"}" data-act="add" ${inS?"disabled":""}>${inS?"Added":"Add"}</button></div></div>
       ${open?detailHtml(s):""}</div>`}).join("")||`<div class="empty">No scales match.</div>`;
   $("#scaleList").querySelectorAll("button").forEach(b=>b.onclick=()=>{const id=b.closest(".scale").dataset.id;
+    if(b.dataset.act==="pick"){const s=scaleById(id);S.pick[id]={mode:b.dataset.m,pts:+b.dataset.n||5};const blk=S.blocks.find(x=>x.id===id);if(blk){blk.mode=S.pick[id].mode;blk.pts=S.pick[id].pts;applyFmt(blk);renderBlocks()}renderList();return}
     if(b.dataset.act==="view"){S.open.has(id)?S.open.delete(id):S.open.add(id);renderList()}
     else{addBlock(id);renderBlocks();renderList()}});
 }
+function pickOf(s){return S.pick[s.id]||(S.pick[s.id]={mode:"orig",pts:5})}
+function chipsHtml(s){const own=its(s).every(it=>it.opts);if(own)return `<span class="note">Each question has its own response options.</span>`;
+  const p=pickOf(s);const o=fmtOptions(s).find(f=>parseAnchors(f).labels.length);const on=(m,n)=>p.mode===m&&(m==="orig"||p.pts===n);
+  const c=(m,n,l,t)=>`<button class="chip${on(m,n)?" on":""}" data-act="pick" data-m="${m}" data-n="${n||""}" title="${esc(t)}">${l}</button>`;
+  return c("orig",0,o?`Original · ${o.n||parseAnchors(o).labels.length} pt`:"Original","As in the source"+(o?": "+parseAnchors(o).labels.join(" / "):" (not on record; enter after adding)"))
+   +c("sasd",5,"Agree · 5",PRESETS.sasd[5].join(" / "))+c("sasd",7,"Agree · 7",PRESETS.sasd[7].join(" / "))
+   +c("tf",5,"True/false · 5",PRESETS.tf[5].join(" / "))+c("tf",7,"True/false · 7",PRESETS.tf[7].join(" / "));}
 function detailHtml(s){
-  const f=fmtOptions(s);
-  return `<div class="detail"><dl>
-    ${s.construct?`<dt>Construct</dt><dd>${esc(s.construct)}</dd>`:""}
-    ${s.def?`<dt>Definition</dt><dd>${esc(s.def)}${s.defsrc?` <span style="color:var(--muted)">(${esc(s.defsrc)})</span>`:""}</dd>`:""}
-    ${s.rf?`<dt>Response format</dt><dd>${esc(s.rf)}</dd>`:""}
-    ${f.length?`<dt>As administered</dt><dd>${f.map(x=>esc([x.n?x.n+" categories":"",x.anchors,x.labeling].filter(Boolean).join(" · "))+(x.study?` <span style="color:var(--muted)">(${esc(x.study)})</span>`:"")).join("<br>")}</dd>`:""}
-    <dt>Source</dt><dd>${esc(s.citation||"")}${s.doi?` <a href="https://doi.org/${esc(s.doi.replace(/^https?:\/\/doi.org\//,""))}" target="_blank" rel="noopener">doi</a>`:s.url?` <a href="${esc(s.url)}" target="_blank" rel="noopener">link</a>`:""}</dd>
-  </dl>
-  <div class="terms"><b>Use:</b> ${esc(terms(s))}</div>
-  ${langs(s).length>1?`<div style="font-size:12px;color:var(--muted)">Showing the ${esc(defLang(s))} items; choose another language after adding the scale.</div>`:""}<ol>${its(s).map(it=>`<li>${esc(it.w)}${it.unv?` <span class="rk">not yet verified</span>`:""}${revKey(it.k)?`<span class="rk">R</span>`:""}${it.opts?`<div style="font-size:12px">Options: ${esc(it.opts.join(" / "))}</div>`:""}${it.sub?` <span style="color:var(--muted);font-size:12px">[${esc(it.sub)}]</span>`:""}${it.note?`<div style="color:var(--muted);font-size:12px">${esc(it.note)}</div>`:""}</li>`).join("")}</ol></div>`;
+  const f=fmtOptions(s);const ns=[...new Set(f.map(x=>parseInt(x.n,10)).filter(Boolean))].sort((a,b)=>a-b);
+  return `<div class="detail">
+    ${s.def?`<p class="def">${esc(s.def)}${s.defsrc?` <span class="note">(${esc(s.defsrc)})</span>`:""}</p>`:s.construct?`<p class="def">${esc(s.construct)}</p>`:""}
+    <div class="chips"><span class="clab">Response format</span>${chipsHtml(s)}</div>
+    ${(s.rf||f.length)?`<p class="note" title="${esc(s.rf||"")}">${s.rf?esc(s.rf.length>110?s.rf.slice(0,s.rf.lastIndexOf(" ",105))+"…":s.rf):""}${f.length?`${s.rf?" · ":""}Administered in ${f.length} stud${f.length===1?"y":"ies"}${ns.length?" ("+ns.join(", ")+"-point)":""}.`:""}</p>`:""}
+    <p class="note"><b>Source:</b> ${esc(s.citation||"")}${s.doi?` <a href="https://doi.org/${esc(s.doi.replace(/^https?:\/\/doi.org\//,""))}" target="_blank" rel="noopener">doi</a>`:s.url?` <a href="${esc(s.url)}" target="_blank" rel="noopener">link</a>`:""}</p>
+    <p class="note"><b>Use:</b> ${esc(terms(s))}</p>
+  ${langs(s).length>1?`<p class="note">Showing the ${esc(defLang(s))} items; choose another language after adding the scale.</p>`:""}<ol>${its(s).map(it=>`<li>${esc(it.w)}${it.unv?` <span class="rk">not yet verified</span>`:""}${revKey(it.k)?`<span class="rk">R</span>`:""}${it.opts?`<div style="font-size:12px">Options: ${esc(it.opts.join(" / "))}</div>`:""}${it.sub?` <span style="color:var(--muted);font-size:12px">[${esc(it.sub)}]</span>`:""}${it.note?`<div style="color:var(--muted);font-size:12px">${esc(it.note)}</div>`:""}</li>`).join("")}</ol></div>`;
 }
 
 /* ---------- survey blocks ---------- */
@@ -250,6 +263,7 @@ function addBlock(id,ctl){
   const s=scaleById(id);if(!s||S.blocks.some(b=>b.id===id))return;
   const f=fmtOptions(s)[0];const pa=parseAnchors(f);
   S.blocks.push({id,open:false,mode:"orig",pts:5,fi:0,lang:defLang(s),ctl:!!(ctl||s.control),stem:(f&&f.preamble)||"",labels:pa.labels.join("; "),poles:pa.poles,rand:false,type:(isAttention(s)||its(s).filter(it=>it.opts).length>=s.items.length/2)?"separate":"matrix"});
+  const bk=S.blocks[S.blocks.length-1],pk=S.pick[id];if(pk&&!its(s).every(it=>it.opts)){bk.mode=pk.mode;bk.pts=pk.pts;applyFmt(bk)}
   toast(`Added ${s.short||s.name}`);
 }
 const PRESETS={
@@ -342,6 +356,9 @@ function exportWord(){
     if(its(s,b).some(it=>revKey(it.k)))body.push(para(run("(R) = reverse-keyed item.",{i:true,sz:18}),{after:60}));
     body.push(para(run("Source: ",{b:true,sz:18})+run(s.citation||"",{sz:18}),{after:200}));
   });
+  body.push(para(run("References"),{style:"Heading1",pb:true}));
+  body.push(para(run("Item wording in this draft was verified against these original sources.",{i:true,sz:20,color:"666666"})));
+  [...new Set(S.blocks.map(b=>scaleById(b.id).citation).filter(Boolean))].sort((p,q)=>p.localeCompare(q)).forEach(c=>body.push(para(run(c),{ind:720,hang:720,after:120})));
   body.push(para(run("Permissions and terms of use"),{style:"Heading1",pb:true}));
   body.push(para(run("Some of the scales in this draft may require permission from their authors or publishers before they are fielded, and all should be cited. The terms on record in the Smallpage Item Bank are listed below. They are a starting point, not a clearance: check each scale’s terms with the original source before fielding.")));
   S.blocks.forEach(b=>{const s=scaleById(b.id);
@@ -387,9 +404,11 @@ function exportQsf(){
       BlockElements:ids.map(id=>({Type:"Question",QuestionID:id})),Options:{BlockLocking:"false",RandomizeQuestions:b.type==="separate"&&b.rand?"RandomWithXPerPage":"false",BlockVisibility:"Expanded"}};
     flow.push({Type:"Standard",ID:BID,FlowID:"FL_"+(bi+2),Autofill:[]});
   });
-  const riderT="PERMISSIONS AND TERMS OF USE (not shown to respondents). Some of these scales may require permission from their authors or publishers before fielding, and all should be cited. Terms on record in the Smallpage Item Bank:<br><br>"+S.blocks.map(b=>{const s=scaleById(b.id);return `<b>${esc(s.short||s.name)}</b>: ${esc(terms(s))}<br>${esc(s.citation||"")}`}).join("<br><br>");
-  const rq=addQ({QuestionText:riderT,DataExportTag:"permissions_note",QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1});
-  blocks["1"].BlockElements.push({Type:"Question",QuestionID:rq});
+  const srcT="SOURCES (not shown to respondents). Item wording in this survey was verified against these original sources:<br><br>"+S.blocks.map(b=>{const s=scaleById(b.id);return `<b>${esc(s.short||s.name)}</b>: ${esc(s.citation||"")}`}).join("<br><br>");
+  const riderT="PERMISSIONS AND TERMS OF USE (not shown to respondents). Some of these scales may require permission from their authors or publishers before fielding, and all should be cited. Terms on record in the Smallpage Item Bank:<br><br>"+S.blocks.map(b=>{const s=scaleById(b.id);return `<b>${esc(s.short||s.name)}</b>: ${esc(terms(s))}`}).join("<br><br>");
+  const dbq=(t,tg)=>addQ({QuestionText:t,DataExportTag:tg,QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1});
+  const sq=dbq(srcT,"sources_note"),rq=dbq(riderT,"permissions_note");
+  blocks[String(S.blocks.length+2)]={Type:"Standard",SubType:"",Description:"Sources and permissions (not in survey flow; not shown to respondents)",ID:rid("BL_",15),BlockElements:[{Type:"Question",QuestionID:sq},{Type:"Question",QuestionID:rq}],Options:{BlockLocking:"false",RandomizeQuestions:"false",BlockVisibility:"Expanded"}};
   const RS=rid("RS_",15);
   const out={SurveyEntry:{SurveyID:SID,SurveyName:name,SurveyDescription:null,SurveyOwnerID:"",SurveyBrandID:"",DivisionID:null,SurveyLanguage:"EN",SurveyActiveResponseSet:RS,SurveyStatus:"Inactive",SurveyStartDate:"0000-00-00 00:00:00",SurveyExpirationDate:"0000-00-00 00:00:00",SurveyCreationDate:now,CreatorID:"",LastModified:now,LastAccessed:"0000-00-00 00:00:00",LastActivated:"0000-00-00 00:00:00",Deleted:null},
     SurveyElements:[el("BL","Survey Blocks",null,blocks),el("FL","Survey Flow",null,{Type:"Root",FlowID:"FL_1",Flow:flow,Properties:{Count:flow.length+1}}),
