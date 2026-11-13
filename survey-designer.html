@@ -146,7 +146,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 24px 40px;font-size:12px;color:v
       </div>
       <div id="blocks"><div class="empty">Add scales from the list to start.</div></div>
       <div class="export">
-        <p class="note" style="margin:0 0 8px">Each scale exports in its original format: the response options and question stem as recorded in the source. Where the source does not record them, the export holds a placeholder (INSTRUCTIONS NEEDED or INSERT RESPONSE OPTION). Make any changes to stems or response options in Qualtrics after you import the survey.</p>
+        <p class="note" style="margin:0 0 8px">Each scale exports in its original format: the response options and question stem as recorded in the source. Where the source does not record them, the export holds a placeholder (INSTRUCTIONS NEEDED or RESPONSE OPTIONS NEEDED). Make any changes to stems or response options in Qualtrics after you import the survey.</p>
         <label class="ack"><input type="checkbox" id="ack"><span>I understand that some of these scales may need the authors’ or publisher’s permission before they are fielded, and that I am responsible for checking each scale’s terms of use and citing its source. The export lists the terms on record for each scale at the end.</span></label>
         <div class="ebtns">
           <button class="btn primary" id="toWord" disabled>Export Word (.docx)</button>
@@ -332,7 +332,7 @@ function renderBlocks(){
             :`<label>Points<select data-k="pts"><option ${b.pts==5?"selected":""}>5</option><option ${b.pts==7?"selected":""}>7</option></select></label>`}
         </div>
         <label>Response options, in order (edit if needed; separate with semicolons)
-          <input type="text" data-k="labels" value="${esc(b.labels)}" placeholder="Enter the source’s response options"></label>
+          <input type="text" class="stemta" data-k="labels" value="${esc(b.labels)}" placeholder="Enter the source’s response options"><span class="stemwarn">Add the response options. If this stays blank, the export will say RESPONSE OPTIONS NEEDED.</span></label>
         ${b.mode==="orig"&&b.poles?`<div style="color:var(--warn);font-size:12px">The source labels only the end points; middle points are numbered.</div>`:""}
         ${b.mode!=="orig"?`<div style="color:var(--warn);font-size:12px">Not the source’s format; the Word export notes the change.</div>`:""}`}
         <label class="inline">Layout <select data-k="type"><option value="matrix" ${b.type==="matrix"?"selected":""}>One grid (matrix)</option><option value="separate" ${b.type==="separate"?"selected":""}>One question per item</option></select></label>
@@ -384,7 +384,7 @@ function exportWord(){
     if(b.stem||!its(s,b).every(it=>it.opts))body.push(para(run("Instructions: ",{b:true})+run(b.stem||"INSTRUCTIONS NEEDED",{b:!b.stem,color:b.stem?undefined:"B91C1C"})));
     its(s,b).forEach((it,j)=>{body.push(para(run(`${j+1}. `)+run(it.w)+(it.unv?run(" [not yet verified against source]",{i:true,sz:18,color:"7A4F07"}):"")+(revKey(it.k)?run(" (R)",{b:true}):"")+(it.sub?run(`  [${it.sub}]`,{sz:18,color:"777777"}):""),{ind:540,hang:360,after:it.opts?20:60}));if(it.opts)body.push(para(run("Options: "+it.opts.join(" / "),{sz:18,color:"555555"}),{ind:540,after:60}))});
     const L=labelsOf(b);
-    if(!its(s,b).every(it=>it.opts))body.push(para(run("Response options: ",{b:true})+run(L.length?L.map((l,k)=>l===String(k+1)?l:`${k+1} = ${l}`).join("; "):"[Insert the source’s response options]",{i:!L.length}),{after:60}));
+    if(!its(s,b).every(it=>it.opts))body.push(para(run("Response options: ",{b:true})+run(L.length?L.map((l,k)=>l===String(k+1)?l:`${k+1} = ${l}`).join("; "):"RESPONSE OPTIONS NEEDED",{b:!L.length,color:L.length?undefined:"B91C1C"}),{after:60}));
     if(b.poles)body.push(para(run("The source labels only the end points.",{i:true,sz:18,color:"7A4F07"}),{after:60}));
     if(b.mode&&b.mode!=="orig"&&!its(s,b).every(it=>it.opts))body.push(para(run(`Response format changed from the source’s to a ${b.pts}-point ${b.mode==="sasd"?"agree–disagree":"true–false"} scale.`,{i:true,sz:18,color:"7A4F07"}),{after:60}));
     if(b.rand)body.push(para(run("Randomize item order.",{i:true,sz:18}),{after:60}));
@@ -420,7 +420,7 @@ function exportQsf(){
     qs.push(el("SQ",QID,QDesc(p.QuestionText),p));return QID}
   S.blocks.forEach((b,bi)=>{const s=scaleById(b.id);const L=labelsOf(b);const stem=b.stem||"INSTRUCTIONS NEEDED";const own0=its(s,b).every(it=>it.opts);const st=tag(s.short||s.id);const ids=[];
     const choices={},order=[],ctags={};its(s,b).forEach((it,j)=>{choices[j+1]={Display:it.w};order.push(j+1);ctags[j+1]=tag(it.id)});
-    const answers={},aorder=[];(L.length?L:["INSERT RESPONSE OPTION"]).forEach((l,k)=>{answers[k+1]={Display:l};aorder.push(k+1)});
+    const answers={},aorder=[];(L.length?L:["RESPONSE OPTIONS NEEDED"]).forEach((l,k)=>{answers[k+1]={Display:l};aorder.push(k+1)});
     if(b.type==="matrix"){
       ids.push(addQ({QuestionText:stem,DataExportTag:st,QuestionType:"Matrix",Selector:"Likert",SubSelector:"SingleAnswer",
         Configuration:{QuestionDescriptionOption:"UseText",TextPosition:"inline",ChoiceColumnWidth:25,RepeatHeaders:"none",WhiteSpace:"OFF",MobileFirst:true},
@@ -428,7 +428,7 @@ function exportQsf(){
         Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:order.length+1,NextAnswerId:aorder.length+1}));
     }else{
       if(b.stem||!own0)ids.push(addQ({QuestionText:stem,DataExportTag:st+"_intro",QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));
-      its(s,b).forEach(it=>{if(it.note)notes.push(`<b>${esc(it.id)}</b> (${esc(s.short||s.name)}): ${esc(it.note)}`);const ch={},co=[];const OL=it.opts||(L.length?L:["INSERT RESPONSE OPTION"]);
+      its(s,b).forEach(it=>{if(it.note)notes.push(`<b>${esc(it.id)}</b> (${esc(s.short||s.name)}): ${esc(it.note)}`);const ch={},co=[];const OL=it.opts||(L.length?L:["RESPONSE OPTIONS NEEDED"]);
         if(it.opts&&it.opts.length===1&&/text entry/i.test(it.opts[0])){ids.push(addQ({QuestionText:it.w,DataExportTag:tag(it.id),QuestionType:"TE",Selector:"SL",Configuration:{QuestionDescriptionOption:"UseText"},Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));return}
         OL.forEach((l,k)=>{ch[k+1]={Display:l};co.push(k+1)});
         ids.push(addQ({QuestionText:it.w,DataExportTag:tag(it.id),QuestionType:"MC",Selector:/one or more|all that apply/i.test(it.w)?"MAVR":"SAVR",SubSelector:"TX",
