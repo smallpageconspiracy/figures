@@ -75,6 +75,11 @@ header p{color:var(--ink2);max-width:760px;margin:0;font-size:14.5px}
 .tog{display:flex;gap:6px;align-items:flex-start;background:none;border:0;padding:2px 0;cursor:pointer;text-align:left;flex:1;min-width:0}
 .tog .car{color:var(--muted);width:12px;flex-shrink:0}
 .tog .bname{font-weight:600;font-size:14px}
+.itl{border:1px solid var(--rule);border-radius:8px;padding:6px 10px;background:var(--surface)}
+.itl summary{cursor:pointer;font-weight:500;color:var(--hedge);font-size:12.5px}
+.itl ol{margin:6px 0 2px;padding-left:20px;max-height:260px;overflow:auto;font-size:12.5px;color:var(--ink)}
+.itl li{margin:3px 0}
+.itl .opt{color:var(--muted);font-size:11.5px}
 .fmtrow{display:grid;grid-template-columns:1fr 110px;gap:8px}
 .fmtrow label:only-child{grid-column:1/-1}
 .icon{border:1px solid var(--rule);background:#fff;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;line-height:1}
@@ -265,6 +270,7 @@ function renderBlocks(){
       <div class="bctl"><button class="icon" data-act="up" title="Move up" aria-label="Move up">↑</button><button class="icon" data-act="down" title="Move down" aria-label="Move down">↓</button><button class="icon" data-act="rm" title="Remove" aria-label="Remove">✕</button></div></div>
       ${b.open?`<div class="bopts">
         <div class="bsub">${esc(s.name)}${langs(s).length>1?` · Language <select data-k="lang">${langs(s).map(l=>`<option ${l===b.lang?"selected":""}>${esc(l)}</option>`).join("")}</select>`:""}</div>
+        <details class="itl" ${b.showItems?"open":""}><summary>Items (${its(s,b).length})</summary><ol>${its(s,b).map(it=>`<li>${esc(it.w)}${revKey(it.k)?`<span class="rk">R</span>`:""}${it.unv?` <span class="rk">not yet verified</span>`:""}${it.opts?`<div class="opt">${esc(it.opts.join(" / "))}</div>`:""}</li>`).join("")}</ol></details>
         <label>Instructions shown to respondents<textarea data-k="stem" placeholder="Leave blank to insert a placeholder; use the source’s wording">${esc(b.stem)}</textarea></label>
         ${own?`<div style="font-size:12px;color:var(--ink2)">Each question carries its own response options (shown in the scale’s detail).</div>`:`
         <div class="fmtrow">
@@ -287,6 +293,7 @@ function renderBlocks(){
       if(a==="tog"){b.open=!b.open;renderBlocks();return}
       if(a==="rm")S.blocks.splice(i,1);else{const j=a==="up"?i-1:i+1;if(j<0||j>=S.blocks.length)return;[S.blocks[i],S.blocks[j]]=[S.blocks[j],S.blocks[i]]}
       renderBlocks();renderList()});
+    const dt=node.querySelector("details.itl");if(dt)dt.ontoggle=()=>{b.showItems=dt.open};
     node.querySelectorAll("[data-k]").forEach(inp=>{const k=inp.dataset.k;
       const h=e=>{if(k==="lang"){b.lang=inp.value;renderBlocks();return}
         if(k==="rand"){b.rand=inp.checked;return}
