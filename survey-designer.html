@@ -145,6 +145,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 24px 40px;font-size:12px;color:v
       </div>
       <div id="blocks"><div class="empty">Add scales from the list to start.</div></div>
       <div class="export">
+        <p class="note" style="margin:0 0 8px">Each scale exports in its original format: the response options and question stem as recorded in the source. Where the source does not record them, the export holds a placeholder (INSERT INSTRUCTIONS or INSERT RESPONSE OPTION). Make any changes to stems or response options in Qualtrics after you import the survey.</p>
         <label class="ack"><input type="checkbox" id="ack"><span>I understand that some of these scales may need the authors’ or publisher’s permission before they are fielded, and that I am responsible for checking each scale’s terms of use and citing its source. The export lists the terms on record for each scale at the end.</span></label>
         <div class="ebtns">
           <button class="btn primary" id="toWord" disabled>Export Word (.docx)</button>
@@ -230,9 +231,7 @@ function pickOf(s){return S.pick[s.id]||(S.pick[s.id]={mode:"orig",pts:5})}
 function chipsHtml(s){const own=its(s).every(it=>it.opts);if(own)return `<span class="note">Each question has its own response options.</span>`;
   const p=pickOf(s);const o=fmtOptions(s).find(f=>parseAnchors(f).labels.length);const on=(m,n)=>p.mode===m&&(m==="orig"||p.pts===n);
   const c=(m,n,l,t)=>`<button class="chip${on(m,n)?" on":""}" data-act="pick" data-m="${m}" data-n="${n||""}" title="${esc(t)}">${l}</button>`;
-  return c("orig",0,o?`Original · ${o.n||parseAnchors(o).labels.length} pt`:"Original","As in the source"+(o?": "+parseAnchors(o).labels.join(" / "):" (not on record; enter after adding)"))
-   +c("sasd",5,"Agree · 5",PRESETS.sasd[5].join(" / "))+c("sasd",7,"Agree · 7",PRESETS.sasd[7].join(" / "))
-   +c("tf",5,"True/false · 5",PRESETS.tf[5].join(" / "))+c("tf",7,"True/false · 7",PRESETS.tf[7].join(" / "));}
+  return c("orig",0,o?`Original · ${o.n||parseAnchors(o).labels.length} pt`:"Original","As in the source"+(o?": "+parseAnchors(o).labels.join(" / "):" (not on record; enter after adding)"));}
 function detailHtml(s){
   const f=fmtOptions(s);const ns=[...new Set(f.map(x=>parseInt(x.n,10)).filter(Boolean))].sort((a,b)=>a-b);
   return `<div class="detail">
@@ -294,11 +293,12 @@ function parseRF(rf){
     if(okL(lo)&&okL(hi)&&lo.split(" ").length>=2&&hi.split(" ").length>=2)return {labels:Array.from({length:n},(_,i)=>i===0?lo:i===n-1?hi:String(i+1)),poles:true};}
   return none;
 }
+function stemOf(s){const m=String(s.rf||"").replace(/[“”]/g,'"').match(/(?:preamble|instructions?(?: state)?|intro(?:duction)?|stem)\s*(?:\([^)]*\))?\s*:\s*(?:[^"]{0,60}?)"([^"]{15,400})"/i);return m?m[1].trim():""}
 function isAttention(s){return /attention|data quality/i.test(s.family||"")}
 function addBlock(id,ctl){
   const s=scaleById(id);if(!s||S.blocks.some(b=>b.id===id))return;
   const f=fmtOptions(s)[0];const pa=parseAnchors(f);
-  S.blocks.push({id,open:false,mode:"orig",pts:5,fi:0,lang:defLang(s),ctl:!!(ctl||s.control),stem:(f&&f.preamble)||"",labels:pa.labels.join("; "),poles:pa.poles,rand:false,type:(isAttention(s)||its(s).filter(it=>it.opts).length>=s.items.length/2)?"separate":"matrix"});
+  S.blocks.push({id,open:false,mode:"orig",pts:5,fi:0,lang:defLang(s),ctl:!!(ctl||s.control),stem:(f&&f.preamble)||stemOf(s),labels:pa.labels.join("; "),poles:pa.poles,rand:false,type:(isAttention(s)||its(s).filter(it=>it.opts).length>=s.items.length/2)?"separate":"matrix"});
   const bk=S.blocks[S.blocks.length-1],pk=S.pick[id];if(pk&&!its(s).every(it=>it.opts)){bk.mode=pk.mode;bk.pts=pk.pts;applyFmt(bk)}
   toast(`Added ${s.short||s.name}`);
 }
@@ -324,10 +324,7 @@ function renderBlocks(){
         <label>Instructions shown to respondents<textarea data-k="stem" placeholder="Leave blank to insert a placeholder; use the source’s wording">${esc(b.stem)}</textarea></label>
         ${own?`<div style="font-size:12px;color:var(--ink2)">Each question carries its own response options (shown in the scale’s detail).</div>`:`
         <div class="fmtrow">
-          <label>Response format<select data-k="mode">
-            <option value="orig" ${b.mode==="orig"?"selected":""}>Original scale${origOk?"":" (not on record)"}</option>
-            <option value="sasd" ${b.mode==="sasd"?"selected":""}>Strongly disagree – strongly agree</option>
-            <option value="tf" ${b.mode==="tf"?"selected":""}>Definitely false – definitely true</option></select></label>
+          <span style="font-size:12px;color:var(--ink2)">Response format: original scale${origOk?"":" (not on record)"}</span>
           ${b.mode==="orig"?(opts.length>1?`<label>Version<select data-k="fi">${opts.map((f,j)=>`<option value="${j}" ${j===(b.fi||0)?"selected":""}>${esc([f.n?f.n+" pts":"",f.study].filter(Boolean).join(" · ").slice(0,48))}</option>`).join("")}</select></label>`:"")
             :`<label>Points<select data-k="pts"><option ${b.pts==5?"selected":""}>5</option><option ${b.pts==7?"selected":""}>7</option></select></label>`}
         </div>
