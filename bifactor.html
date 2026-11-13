@@ -71,7 +71,7 @@
   .ci{position:absolute;top:6px;height:2px;background:#B9B2A4}
   .pt{position:absolute;top:2px;width:10px;height:10px;margin-left:-5px}
   .tleg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--ink2);margin:0 0 10px}
-  .tleg:empty{display:none}
+  .tleg>span{display:inline-flex;align-items:center;margin-right:10px}
   .tleg .lh{margin-right:2px}
   .tleg button{display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:none;font:inherit;font-size:12.5px;color:var(--ink2);padding:3px 8px;border-radius:999px;cursor:pointer}
   .tleg button[aria-pressed="true"]{border-color:var(--rule);background:#F6F2EA;color:var(--ink)}
@@ -133,7 +133,7 @@
   </div>
 
   <h2>Theory by theory</h2>
-  <p class="sub">Each of the 21 conspiracy theories in the BCTI regressed on the common factor and the four scale-specific factors. “All factors” shows the five estimates for each theory together; click one to bring it forward with its 95% interval. The common factor predicts every theory. The GCB-5 leftover is largest for the two alien theories. The GMC leftover predicts many theories a little and the four partisan-coded ones the most. These estimates use factor scores, so they run smaller than the paper’s latent-model estimates (.34 here for the alien items, against .52 and .53).</p>
+  <p class="sub">Each of the 21 conspiracy theories in the BCTI regressed on the common factor and the four scale-specific factors. “All factors” shows the five estimates for each theory together. Choose a factor to bring it forward with its 95% interval; the others stay in place, faded. The common factor predicts every theory. The GCB-5 leftover is largest for the two alien theories. The GMC leftover predicts many theories a little and the four partisan-coded ones the most. These estimates use factor scores, so they run smaller than the paper’s latent-model estimates (.34 here for the alien items, against .52 and .53).</p>
   <div class="panel">
     <div class="fsel" role="group" aria-label="Factor" id="fsel"></div>
     <div class="tleg" id="tleg"></div>
@@ -220,28 +220,21 @@ const FAC=[["general","Common factor","#1B6E3F","circle"],["s.gcb","GCB-5 leftov
 const SH={circle:"border-radius:50%",square:"border-radius:2px",diamond:"clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)",tri:"clip-path:polygon(50% 0,100% 100%,0 100%)",itri:"clip-path:polygon(0 0,100% 0,50% 100%)"};
 const TMIN=-.3,TMAX=.8,TX=v=>(v-TMIN)/(TMAX-TMIN)*100;
 const TAGF={"s.gcb":"alien","s.gmc":"partisan"};
-let cur="all",hl=null;
+let cur="all";
 const fsel=document.getElementById("fsel");
-[["all","All factors"]].concat(FAC.map(f=>[f[0],f[1]])).forEach(([k,l])=>{const b=document.createElement("button");b.textContent=l;b.dataset.k=k;b.onclick=()=>{cur=k;hl=null;drawT();};fsel.appendChild(b);});
+[["all","All factors"]].concat(FAC.map(f=>[f[0],f[1]])).forEach(([k,l])=>{const b=document.createElement("button");b.textContent=l;b.dataset.k=k;b.onclick=()=>{cur=k;drawT();};fsel.appendChild(b);});
+document.getElementById("tleg").innerHTML=FAC.map(f=>`<span><span class="sw2" style="background:${f[2]};${SH[f[3]]}"></span>${f[1]}</span>`).join("");
 function mark(f,x,op,big){return `<div class="pt" style="left:${x}%;background:${f[2]};${SH[f[3]]};opacity:${op};${big?"width:13px;height:13px;margin-left:-6.5px;top:.5px;z-index:2":""}"></div>`;}
 function drawT(){
   fsel.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.k===cur));
-  const lg=document.getElementById("tleg");
-  const on=cur==="all"?hl:cur;
-  lg.innerHTML=cur!=="all"?"":`<span class="lh">Click a factor to bring it forward:</span>`+FAC.map(f=>`<button data-k="${f[0]}" aria-pressed="${hl===f[0]}"><span class="sw2" style="background:${f[2]};${SH[f[3]]}"></span>${f[1]}</button>`).join("");
-  lg.querySelectorAll("button").forEach(x=>x.onclick=()=>{hl=hl===x.dataset.k?null:x.dataset.k;drawT();});
+  const on=cur==="all"?null:cur;
   const el=document.getElementById("theories");el.innerHTML="";
   T.forEach(t=>{const d=document.createElement("div");d.className="trow";
     const tag=on&&TAGF[on]&&t.f===TAGF[on]?`<span class="tag">${t.f}</span>`:"";
-    let track=`<div class="zero" style="left:${TX(0)}%"></div>`,val="";
-    if(cur==="all"){
-      FAC.forEach(f=>{const [b,lo,hi]=t[f[0]];const act=hl===f[0];
-        if(act)track+=`<div class="ci" style="left:${TX(lo)}%;width:${TX(hi)-TX(lo)}%"></div>`;
-        track+=mark(f,TX(b),hl?(act?1:.15):.55,act);});
-      val=hl?f2(t[hl][0]):"";
-    }else{const f=FAC.find(x=>x[0]===cur);const [b,lo,hi]=t[cur];
-      track+=`<div class="ci" style="left:${TX(lo)}%;width:${TX(hi)-TX(lo)}%"></div>`+mark(f,TX(b),1,true);val=f2(b);}
-    d.innerHTML=`<div class="tlab">${t.i}. ${t.l}${tag}</div><div class="ttrack">${track}</div><div class="bval">${val}</div>`;
+    let track=`<div class="zero" style="left:${TX(0)}%"></div>`;
+    if(on){const [,lo,hi]=t[on];track+=`<div class="ci" style="left:${TX(lo)}%;width:${TX(hi)-TX(lo)}%"></div>`;}
+    FAC.forEach(f=>{const act=on===f[0];track+=mark(f,TX(t[f[0]][0]),on?(act?1:.18):1,act);});
+    d.innerHTML=`<div class="tlab">${t.i}. ${t.l}${tag}</div><div class="ttrack">${track}</div><div class="bval">${on?f2(t[on][0]):""}</div>`;
     hover(d,`<b>${t.i}. ${t.l}</b><div class="w">“${t.w}”</div><table>${FAC.map(([k,l,c,sh])=>`<tr><td><span class="sw2" style="background:${c};${SH[sh]}"></span>${l}</td><td>${f2(t[k][0])}</td></tr>`).join("")}<tr><td>R²</td><td>${f2(t.r2)}</td></tr></table>`);
     el.appendChild(d);});
   el.insertAdjacentHTML("beforeend",`<div class="tticks">${[-.2,0,.2,.4,.6,.8].map(v=>`<span style="left:${TX(v)}%">${v===0?"0":(v<0?"−":"")+Math.abs(v).toFixed(1).replace(/^0/,"")}</span>`).join("")}</div>`);
