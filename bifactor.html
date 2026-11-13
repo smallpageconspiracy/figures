@@ -104,32 +104,12 @@
   <div class="back"><a href="https://www.stevensmallpage.com/research">← stevensmallpage.com</a></div>
   <div class="eyebrow">Interactive summary · Smallpage, Jensen &amp; Askew (2026)</div>
   <h1>Are the short conspiracy scales interchangeable?</h1>
-  <p class="lede">Researchers often treat four short scales of “conspiracy mentality” as substitutes for one another. All four do reflect one common trait, and that trait does most of the work. But two of the scales carry something more, so they are not strictly interchangeable.</p>
+  <p class="lede">Researchers often treat four short scales of “conspiracy mentality” as substitutes for one another. All four do reflect one common trait, which accounts for about 60 percent of the variance in belief in 21 specific conspiracy theories. But two of the scales carry something more, so they are not strictly interchangeable.</p>
 
   <h2>Three conditions for interchangeability</h2>
   <p class="sub">A scale can stand in for the others only if it reflects the common trait, carries no extra content that shapes answers to specific conspiracy questions, and scores people the way the common trait does. Hover over or tap a mark for the evidence.</p>
   <div class="panel" style="overflow-x:auto">
     <table class="sc" id="scorecard"></table>
-  </div>
-
-  <h2>The common factor does most of the work</h2>
-  <p class="sub">Share of variance in respondents’ overall belief in specific conspiracy theories (the BCTI) that each factor accounts for uniquely, from the bifactor model.</p>
-  <div class="panel">
-    <div class="legend"><span><i class="sw" style="background:var(--gen)"></i>Common factor</span><span><i class="sw" style="background:var(--spec)"></i>Scale-specific factors</span></div>
-    <div id="bcti"></div>
-  </div>
-
-  <h2>But two scales carry something extra</h2>
-  <p class="sub">What is left in each scale after the common factor is removed. For the ACT and the CMQ, the remainder is small and unrelated to specific beliefs. For the GCB-5 and the GMC, it is not.</p>
-  <div class="panel">
-    <div class="legend"><span><i class="sw" style="background:var(--gen)"></i>No partisan link</span><span><i class="sw" style="background:var(--spec)"></i>Partisan link</span></div>
-    <div style="font-size:13px;font-weight:600;margin:4px 0 2px">Correlation of each scale’s leftover factor with Republican identity</div>
-    <div id="rep"></div>
-  </div>
-  <div class="callouts">
-    <div class="callout"><h3>GCB-5: paranormal content</h3><div class="big">β = .52, .53</div><p>Its leftover factor predicted belief in the Roswell and Area 51 cover-ups as strongly as the common factor did. The ACT’s leftover did not (β = .03, −.03). It was also related to odd and magical thinking.</p></div>
-    <div class="callout"><h3>GMC: partisan content</h3><div class="big">r = .28</div><p>Its leftover factor tracked Republican identity and predicted a cluster of partisan-coded beliefs in 2023: SARS as a bioweapon, the Obama “birther” claim, anti-vaccine claims, and climate change as a hoax.</p></div>
-    <div class="callout"><h3>GMC: compressed scores</h3><div class="big">~1.5 and ~1.25 SD</div><p>Relative to the common factor, the GMC places people low on the trait about 1.5 standard deviations higher, and people high on the trait about 1.25 lower.</p></div>
   </div>
 
   <h2>Theory by theory</h2>
@@ -194,22 +174,6 @@ COND.forEach(c=>{const tr=document.createElement("tr");
   tb.appendChild(tr);});
 
 // BCTI unique shares (semi-partial eta^2, Table 5)
-const B=[["Common factor",.60,.60,"gen"],["GMC leftover",.03,.03,"spec"],["GCB-5 leftover",.02,.02,"spec"],["CMQ leftover",.005,"<.01","spec"],["ACT leftover",.005,"<.01","spec"]];
-const bc=document.getElementById("bcti");
-B.forEach(([l,v,lab,c])=>{const d=document.createElement("div");d.className="brow";
-  d.innerHTML=`<div class="blab">${l}</div><div class="btrack"><div class="bar" style="left:0;width:${v/.7*100}%;background:var(--${c})"></div></div><div class="bval">${typeof lab==="number"?lab.toFixed(2).replace(/^0/,""):lab}</div>`;
-  hover(d,`<b>${l}</b><br>Unique share of BCTI variance (semi-partial η²): ${typeof lab==="number"?lab.toFixed(2).replace(/^0/,""):lab}`);bc.appendChild(d);});
-bc.insertAdjacentHTML("beforeend",`<div class="ticks">${[0,.2,.4,.6].map(t=>`<span style="left:${t/.7*100}%">${t===0?"0":t.toFixed(1).replace(/^0/,"")}</span>`).join("")}</div>`);
-
-// Republican identity correlations
-const R=[["ACT",-.06,0],["CMQ",-.01,0],["GCB-5",-.11,0],["GMC",.28,1]];
-const rp=document.getElementById("rep"), MIN=-.2, MAX=.35, X=v=>(v-MIN)/(MAX-MIN)*100;
-R.forEach(([s,v,flag])=>{const d=document.createElement("div");d.className="brow";
-  const a=X(Math.min(0,v)),b=X(Math.max(0,v));
-  d.innerHTML=`<div class="blab">${s} leftover</div><div class="btrack"><div class="zero" style="left:${X(0)}%"></div><div class="bar" style="left:${a}%;width:${b-a}%;background:var(--${flag?"spec":"gen"})"></div></div><div class="bval">${(v<0?"−":"")+Math.abs(v).toFixed(2).replace(/^0/,"")}</div>`;
-  hover(d,`<b>${s}</b> leftover factor<br>Correlation with Republican identity: r = ${(v<0?"−":"")+Math.abs(v).toFixed(2).replace(/^0/,"")}`);rp.appendChild(d);});
-rp.insertAdjacentHTML("beforeend",`<div class="ticks">${[-.2,-.1,0,.1,.2,.3].map(t=>`<span style="left:${X(t)}%">${t===0?"0":(t<0?"−":"")+Math.abs(t).toFixed(1).replace(/^0/,"")}</span>`).join("")}</div>`);
-
 // item table
 const IT=[["ACT.1","Even though we live in a democracy, a few people will always run things anyway.",.67,.67,.56],["ACT.2","The people who really “run” the country are not known to the voters.",.82,.81,.11],["ACT.3","Big events like wars, the recent recession, and the outcomes of elections are controlled by small groups of people who are working in secret against the rest of us.",.89,.90,-.05],["ACT.4","Much of our lives are being controlled by plots hatched in secret places.",.83,.84,-.10],["CMQ.1","Many very important things happen in the world, which the public is never informed about.",.78,.72,.28],["CMQ.2","Politicians usually do not tell us the true motives for their decisions.",.62,.57,.66],["CMQ.3","Government agencies closely monitor all citizens.",.69,.68,.05],["CMQ.4","Events which superficially seem to lack a connection are often the result of secret activities.",.78,.83,-.16],["CMQ.5","There are secret organizations that greatly influence political decisions.",.87,.88,.02],["GCB.1","The government permits or perpetrates acts of terrorism on its own soil, disguising its involvement.",.75,.76,.09],["GCB.2","Evidence of alien contact is being concealed from the public.",.57,.54,.41],["GCB.3","New and advanced technology which would harm current industry is being suppressed.",.62,.59,.28],["GCB.4","Certain significant events have been the result of the activity of a small group who secretly manipulate world events.",.83,.92,-.22],["GCB.5","Experiments involving new drugs or technologies are routinely carried out on the public without their knowledge or consent.",.84,.80,.10],["GMC.1","Conspiracy theories accurately depict real life events.",.93,.75,.55],["GMC.2","The information contained within conspiracy theories is generally true.",.90,.75,.50],["GMC.3.r","When I hear conspiracy theories, I feel they are untrue. (reversed)",.80,.62,.51],["GMC.4.r","Conspiracy theories contain information, which has proved to be false. (reversed)",.65,.46,.47],["GMC.5","I have heard several conspiracy theories, which I believe to be true.",.87,.75,.44]];
 document.getElementById("tableWrap").innerHTML=`<table class="data"><thead><tr><th>Item</th><th>Wording</th><th class="n">One-factor λ</th><th class="n">Common λ</th><th class="n">Specific λ</th></tr></thead><tbody>${IT.map(i=>`<tr><td>${i[0]}</td><td>${i[1]}</td><td class="n">${f2(i[2])}</td><td class="n">${f2(i[3])}</td><td class="n">${f2(i[4])}</td></tr>`).join("")}</tbody></table>`;
