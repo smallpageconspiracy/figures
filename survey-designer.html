@@ -103,6 +103,7 @@ header p{color:var(--ink2);max-width:760px;margin:0;font-size:14.5px}
 .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .15s;pointer-events:none;z-index:20}
 footer{max-width:1280px;margin:0 auto;padding:0 24px 40px;font-size:12px;color:var(--muted)}
 @media (max-width:900px){.grid{grid-template-columns:1fr}#surveyPanel{position:static}#scaleList,#blocks{max-height:none}.soon ul{columns:1}.detail dl{grid-template-columns:1fr}}
+.origstem{background:var(--sunk);border-radius:6px;padding:8px 10px;margin:6px 0;font-size:13px}.origstem .clab{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink2,#666);margin-bottom:3px}.stemwarn{display:none;color:var(--warn,#b45309);font-size:12px;margin-top:3px}.stemta:placeholder-shown+.stemwarn{display:block}
 </style>
 </head>
 <body>
@@ -145,7 +146,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 24px 40px;font-size:12px;color:v
       </div>
       <div id="blocks"><div class="empty">Add scales from the list to start.</div></div>
       <div class="export">
-        <p class="note" style="margin:0 0 8px">Each scale exports in its original format: the response options and question stem as recorded in the source. Where the source does not record them, the export holds a placeholder (INSERT INSTRUCTIONS or INSERT RESPONSE OPTION). Make any changes to stems or response options in Qualtrics after you import the survey.</p>
+        <p class="note" style="margin:0 0 8px">Each scale exports in its original format: the response options and question stem as recorded in the source. Where the source does not record them, the export holds a placeholder (INSTRUCTIONS NEEDED or INSERT RESPONSE OPTION). Make any changes to stems or response options in Qualtrics after you import the survey.</p>
         <label class="ack"><input type="checkbox" id="ack"><span>I understand that some of these scales may need the authors’ or publisher’s permission before they are fielded, and that I am responsible for checking each scale’s terms of use and citing its source. The export lists the terms on record for each scale at the end.</span></label>
         <div class="ebtns">
           <button class="btn primary" id="toWord" disabled>Export Word (.docx)</button>
@@ -294,11 +295,12 @@ function parseRF(rf){
   return none;
 }
 function stemOf(s){const m=String(s.rf||"").replace(/[“”]/g,'"').match(/(?:preamble|instructions?(?: state)?|intro(?:duction)?|stem)\s*(?:\([^)]*\))?\s*:\s*(?:[^"]{0,60}?)"([^"]{15,400})"/i);return m?m[1].trim():""}
+function origStem(s,b){const f=fmtOptions(s)[(b&&b.fi)||0];return (f&&typeof f.preamble==="string"&&f.preamble.trim())||stemOf(s)}
 function isAttention(s){return /attention|data quality/i.test(s.family||"")}
 function addBlock(id,ctl){
   const s=scaleById(id);if(!s||S.blocks.some(b=>b.id===id))return;
   const f=fmtOptions(s)[0];const pa=parseAnchors(f);
-  S.blocks.push({id,open:false,mode:"orig",pts:5,fi:0,lang:defLang(s),ctl:!!(ctl||s.control),stem:(f&&f.preamble)||stemOf(s),labels:pa.labels.join("; "),poles:pa.poles,rand:false,type:(isAttention(s)||its(s).filter(it=>it.opts).length>=s.items.length/2)?"separate":"matrix"});
+  S.blocks.push({id,open:false,mode:"orig",pts:5,fi:0,lang:defLang(s),ctl:!!(ctl||s.control),stem:origStem(s,null),labels:pa.labels.join("; "),poles:pa.poles,rand:false,type:(isAttention(s)||its(s).filter(it=>it.opts).length>=s.items.length/2)?"separate":"matrix"});
   const bk=S.blocks[S.blocks.length-1],pk=S.pick[id];if(pk&&!its(s).every(it=>it.opts)){bk.mode=pk.mode;bk.pts=pk.pts;applyFmt(bk)}
   toast(`Added ${s.short||s.name}`);
 }
@@ -321,7 +323,8 @@ function renderBlocks(){
       ${b.open?`<div class="bopts">
         <div class="bsub">${esc(s.name)}${langs(s).length>1?` · Language <select data-k="lang">${langs(s).map(l=>`<option ${l===b.lang?"selected":""}>${esc(l)}</option>`).join("")}</select>`:""}</div>
         <details class="itl" ${b.showItems?"open":""}><summary>Items (${its(s,b).length})</summary><ol>${its(s,b).map(it=>`<li>${esc(it.w)}${revKey(it.k)?`<span class="rk">R</span>`:""}${it.unv?` <span class="rk">not yet verified</span>`:""}${it.opts?`<div class="opt">${esc(it.opts.join(" / "))}</div>`:""}</li>`).join("")}</ol></details>
-        <label>Instructions shown to respondents<textarea data-k="stem" placeholder="Leave blank to insert a placeholder; use the source’s wording">${esc(b.stem)}</textarea></label>
+        <div class="origstem"><span class="clab">Original instructions (from the source)</span><div>${origStem(s,b)?esc(origStem(s,b)):`<i>None on record for this scale.</i>`}</div></div>
+        <label>Instructions shown to respondents<textarea class="stemta" data-k="stem" placeholder="Type the instructions respondents will see">${esc(b.stem)}</textarea>${own?"":`<span class="stemwarn">Add the instructions respondents will see. If this stays blank, the export will say INSTRUCTIONS NEEDED.</span>`}</label>
         ${own?`<div style="font-size:12px;color:var(--ink2)">Each question carries its own response options (shown in the scale’s detail).</div>`:`
         <div class="fmtrow">
           <span style="font-size:12px;color:var(--ink2)">Response format: original scale${origOk?"":" (not on record)"}</span>
@@ -378,7 +381,7 @@ function exportWord(){
   body.push(para(run(`Draft built ${new Date().toLocaleDateString()} from the Smallpage Item Bank (snapshot ${DATA.exported}). Item wording is as verified against each source.`,{i:true,sz:20,color:"666666"})));
   S.blocks.forEach((b,bi)=>{const s=scaleById(b.id);
     body.push(para(run(`${bi+1}. ${s.name}${s.short&&s.short!==s.name?" ("+s.short+")":""}`),{style:"Heading1"}));
-    if(b.stem||!its(s,b).every(it=>it.opts))body.push(para(run("Instructions: ",{b:true})+run(b.stem||"[Insert the source’s instructions]",{i:!b.stem})));
+    if(b.stem||!its(s,b).every(it=>it.opts))body.push(para(run("Instructions: ",{b:true})+run(b.stem||"INSTRUCTIONS NEEDED",{b:!b.stem,color:b.stem?undefined:"B91C1C"})));
     its(s,b).forEach((it,j)=>{body.push(para(run(`${j+1}. `)+run(it.w)+(it.unv?run(" [not yet verified against source]",{i:true,sz:18,color:"7A4F07"}):"")+(revKey(it.k)?run(" (R)",{b:true}):"")+(it.sub?run(`  [${it.sub}]`,{sz:18,color:"777777"}):""),{ind:540,hang:360,after:it.opts?20:60}));if(it.opts)body.push(para(run("Options: "+it.opts.join(" / "),{sz:18,color:"555555"}),{ind:540,after:60}))});
     const L=labelsOf(b);
     if(!its(s,b).every(it=>it.opts))body.push(para(run("Response options: ",{b:true})+run(L.length?L.map((l,k)=>l===String(k+1)?l:`${k+1} = ${l}`).join("; "):"[Insert the source’s response options]",{i:!L.length}),{after:60}));
@@ -415,7 +418,7 @@ function exportQsf(){
   const QDesc=t=>{const s=String(t).replace(/<[^>]+>/g,"");return s.length>100?s.slice(0,97)+"...":s};
   function addQ(p){q++;const QID="QID"+q;p.QuestionID=QID;p.DataVisibility={Private:false,Hidden:false};p.QuestionDescription=QDesc(p.QuestionText);p.Language=[];p.DefaultChoices=false;p.DataExportTag=uniq(p.DataExportTag);
     qs.push(el("SQ",QID,QDesc(p.QuestionText),p));return QID}
-  S.blocks.forEach((b,bi)=>{const s=scaleById(b.id);const L=labelsOf(b);const stem=b.stem||"INSERT INSTRUCTIONS";const st=tag(s.short||s.id);const ids=[];
+  S.blocks.forEach((b,bi)=>{const s=scaleById(b.id);const L=labelsOf(b);const stem=b.stem||"INSTRUCTIONS NEEDED";const own0=its(s,b).every(it=>it.opts);const st=tag(s.short||s.id);const ids=[];
     const choices={},order=[],ctags={};its(s,b).forEach((it,j)=>{choices[j+1]={Display:it.w};order.push(j+1);ctags[j+1]=tag(it.id)});
     const answers={},aorder=[];(L.length?L:["INSERT RESPONSE OPTION"]).forEach((l,k)=>{answers[k+1]={Display:l};aorder.push(k+1)});
     if(b.type==="matrix"){
@@ -424,7 +427,7 @@ function exportQsf(){
         Choices:choices,ChoiceOrder:order,ChoiceDataExportTags:ctags,Answers:answers,AnswerOrder:aorder,
         Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:order.length+1,NextAnswerId:aorder.length+1}));
     }else{
-      if(b.stem)ids.push(addQ({QuestionText:stem,DataExportTag:st+"_intro",QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));
+      if(b.stem||!own0)ids.push(addQ({QuestionText:stem,DataExportTag:st+"_intro",QuestionType:"DB",Selector:"TB",Configuration:{QuestionDescriptionOption:"UseText"},ChoiceOrder:[],Validation:{Settings:{Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));
       its(s,b).forEach(it=>{if(it.note)notes.push(`<b>${esc(it.id)}</b> (${esc(s.short||s.name)}): ${esc(it.note)}`);const ch={},co=[];const OL=it.opts||(L.length?L:["INSERT RESPONSE OPTION"]);
         if(it.opts&&it.opts.length===1&&/text entry/i.test(it.opts[0])){ids.push(addQ({QuestionText:it.w,DataExportTag:tag(it.id),QuestionType:"TE",Selector:"SL",Configuration:{QuestionDescriptionOption:"UseText"},Validation:{Settings:{ForceResponse:"OFF",Type:"None"}},GradingData:[],NextChoiceId:4,NextAnswerId:1}));return}
         OL.forEach((l,k)=>{ch[k+1]={Display:l};co.push(k+1)});
